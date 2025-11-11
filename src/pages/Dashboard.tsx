@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { CurrentlyReading } from "@/components/dashboard/CurrentlyReading";
-import { DailyChallenge } from "@/components/dashboard/DailyChallenge";
-import { FriendFeed } from "@/components/dashboard/FriendFeed";
 import { BookDetail } from "@/components/books/BookDetail";
 import { Gauge, Flame, Clock, BookCheck } from "lucide-react";
 
@@ -148,46 +146,44 @@ export const Dashboard = () => {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* First Column - Dashboard Stats & Currently Reading */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <StatCard
-              title="Reading Speed"
-              value={stats.readingSpeed}
-              icon={Gauge}
-              suffix="pages/min"
-            />
-            <StatCard
-              title="Reading Streak"
-              value={stats.readingStreak}
-              icon={Flame}
-              suffix="days"
-            />
-            <StatCard
-              title="Total Time Read"
-              value={stats.totalTimeRead}
-              icon={Clock}
-              suffix="hrs"
-            />
-            <StatCard
-              title="Books Completed"
-              value={stats.booksCompletedThisYear}
-              icon={BookCheck}
-              suffix="this year"
-            />
-          </div>
-
-          {/* Currently Reading */}
-          <CurrentlyReading book={currentBook} onContinue={handleContinueReading} />
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back!</h2>
+          <p className="text-muted-foreground">
+            {currentBook 
+              ? `You left off in "${currentBook.title}". Ready to continue?`
+              : "Start tracking your reading journey today."}
+          </p>
         </div>
 
-        {/* Second Column - Daily Challenge & Friend Feed */}
-        <div className="space-y-6">
-          <DailyChallenge />
-          <FriendFeed />
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard
+            title="Reading Speed"
+            value={stats.readingSpeed}
+            icon={Gauge}
+            suffix="pages/min"
+          />
+          <StatCard
+            title="Reading Streak"
+            value={stats.readingStreak}
+            icon={Flame}
+            suffix="days"
+          />
+          <StatCard
+            title="Total Time Read"
+            value={stats.totalTimeRead}
+            icon={Clock}
+            suffix="hrs"
+          />
+          <StatCard
+            title="Books Completed"
+            value={stats.booksCompletedThisYear}
+            icon={BookCheck}
+            suffix="this year"
+          />
         </div>
+
+        <CurrentlyReading book={currentBook} onContinue={handleContinueReading} />
       </div>
 
       {selectedBookId && (
