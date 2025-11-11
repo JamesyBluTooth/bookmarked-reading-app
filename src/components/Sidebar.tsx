@@ -2,8 +2,8 @@ import { BookMarked, Home, Library, User, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  activeTab: "dashboard" | "books";
-  onTabChange: (tab: "dashboard" | "books") => void;
+  activeTab: "dashboard" | "books" | "profile";
+  onTabChange: (tab: "dashboard" | "books" | "profile") => void;
 }
 
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
@@ -44,7 +44,13 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
         </button>
 
         <button
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+          onClick={() => onTabChange("profile")}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
+            activeTab === "profile"
+              ? "bg-muted text-foreground shadow-sm"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
         >
           <User className="w-5 h-5" />
           <span className="font-medium">Profile</span>
