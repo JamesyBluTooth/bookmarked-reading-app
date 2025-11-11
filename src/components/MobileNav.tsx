@@ -1,9 +1,9 @@
-import { Home, Library, User, LogOut } from "lucide-react";
+import { Home, Library, User, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileNavProps {
-  activeTab: "dashboard" | "books" | "profile";
-  onTabChange: (tab: "dashboard" | "books" | "profile") => void;
+  activeTab: "dashboard" | "books" | "profile" | "challenge-history";
+  onTabChange: (tab: "dashboard" | "books" | "profile" | "challenge-history") => void;
   onSignOut: () => void;
 }
 
@@ -34,6 +34,17 @@ export const MobileNav = ({ activeTab, onTabChange, onSignOut }: MobileNavProps)
         </button>
 
         <button
+          onClick={() => onTabChange("challenge-history")}
+          className={cn(
+            "flex flex-col items-center gap-1 transition-colors",
+            activeTab === "challenge-history" ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          <Trophy className="w-6 h-6" />
+          <span className="text-xs font-medium">Challenges</span>
+        </button>
+
+        <button
           onClick={() => onTabChange("profile")}
           className={cn(
             "flex flex-col items-center gap-1 transition-colors",
@@ -42,14 +53,6 @@ export const MobileNav = ({ activeTab, onTabChange, onSignOut }: MobileNavProps)
         >
           <User className="w-6 h-6" />
           <span className="text-xs font-medium">Profile</span>
-        </button>
-
-        <button
-          onClick={onSignOut}
-          className="flex flex-col items-center gap-1 text-muted-foreground transition-colors"
-        >
-          <LogOut className="w-6 h-6" />
-          <span className="text-xs font-medium">Sign Out</span>
         </button>
       </div>
     </nav>

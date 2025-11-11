@@ -4,6 +4,7 @@ import { AuthPage } from "@/components/auth/AuthPage";
 import { Dashboard } from "./Dashboard";
 import { Books } from "./Books";
 import Profile from "./Profile";
+import ChallengeHistory from "./ChallengeHistory";
 import { Sidebar } from "@/components/Sidebar";
 import { RightPanel } from "@/components/RightPanel";
 import { MobileNav } from "@/components/MobileNav";
@@ -13,7 +14,7 @@ import { FriendFeed } from "@/components/dashboard/FriendFeed";
 const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history">("dashboard");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -57,6 +58,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-6 lg:py-8 max-w-6xl">
           {activeTab === "dashboard" && <Dashboard />}
           {activeTab === "books" && <Books />}
+          {activeTab === "challenge-history" && <ChallengeHistory />}
           {activeTab === "profile" && <Profile />}
         </div>
 
