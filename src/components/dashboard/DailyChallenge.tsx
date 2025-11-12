@@ -32,6 +32,27 @@ export const DailyChallenge = () => {
     return () => clearInterval(interval);
   }, [challenge?.id]);
 
+  const hasShownAnimation = (challengeId: string): boolean => {
+    try {
+      const shownAnimations = JSON.parse(localStorage.getItem("shownChallengeAnimations") || "[]");
+      return shownAnimations.includes(challengeId);
+    } catch {
+      return false;
+    }
+  };
+
+  const markAnimationAsShown = (challengeId: string) => {
+    try {
+      const shownAnimations = JSON.parse(localStorage.getItem("shownChallengeAnimations") || "[]");
+      if (!shownAnimations.includes(challengeId)) {
+        shownAnimations.push(challengeId);
+        localStorage.setItem("shownChallengeAnimations", JSON.stringify(shownAnimations));
+      }
+    } catch (error) {
+      console.error("Error saving animation state:", error);
+    }
+  };
+
   const loadChallenge = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -50,10 +71,13 @@ export const DailyChallenge = () => {
           .eq("challenge_date", yesterdayStr)
           .single();
 
-        if (previousChallenge && !previousChallengeChecked) {
+        if (previousChallenge && !previousChallengeChecked && !hasShownAnimation(previousChallenge.id)) {
           setPreviousChallengeChecked(true);
           setAnimationSuccess(previousChallenge.is_completed);
           setShowAnimation(true);
+          markAnimationAsShown(previousChallenge.id);
+        } else {
+          setPreviousChallengeChecked(true);
         }
       }
 
