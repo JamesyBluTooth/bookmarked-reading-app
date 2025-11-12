@@ -32,7 +32,13 @@ export const TrophyAnimation = ({ success, onComplete }: TrophyAnimationProps) =
   if (stage === "done") return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-fade-in"
+      onClick={() => {
+        setStage("done");
+        onComplete();
+      }}
+    >
       <div className="relative">
         {stage === "rising" && (
           <div className="animate-[scale-in_0.5s_ease-out,fade-in_0.5s_ease-out] flex flex-col items-center">
