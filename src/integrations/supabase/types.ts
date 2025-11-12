@@ -306,6 +306,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_achievement: {
+        Args: {
+          p_achievement_type: string
+          p_metadata?: Json
+          p_user_id: string
+        }
+        Returns: string
+      }
       generate_daily_challenge: { Args: { p_user_id: string }; Returns: string }
       generate_friend_code: { Args: never; Returns: string }
     }
