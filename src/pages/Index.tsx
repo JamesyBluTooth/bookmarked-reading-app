@@ -19,37 +19,15 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social">("dashboard");
 
   useEffect(() => {
-    const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        const { SyncManager } = await import('@/lib/syncManager');
-        SyncManager.setUserId(session.user.id);
-        await SyncManager.syncOnLoad();
-        SyncManager.setupBeforeUnloadSync();
-        // Auto-sync every minute
-        const interval = SyncManager.startAutoSync(60000);
-        setSession(session);
-        setLoading(false);
-        return () => clearInterval(interval);
-      } else {
-        setSession(session);
-        setLoading(false);
-      }
-    };
-
-    initAuth();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session?.user) {
-        import('@/lib/syncManager').then(({ SyncManager }) => {
-          SyncManager.setUserId(session.user.id);
-          SyncManager.syncOnLoad();
-        });
-      }
     });
 
     return () => subscription.unsubscribe();

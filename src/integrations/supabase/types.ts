@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achievement_type: string
+          earned_at: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          achievement_type: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          achievement_type?: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      books: {
+        Row: {
+          author: string | null
+          cover_url: string | null
+          created_at: string
+          current_page: number | null
+          genres: string[] | null
+          id: string
+          is_completed: boolean | null
+          isbn: string
+          rating: number | null
+          review: string | null
+          title: string
+          total_pages: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author?: string | null
+          cover_url?: string | null
+          created_at?: string
+          current_page?: number | null
+          genres?: string[] | null
+          id?: string
+          is_completed?: boolean | null
+          isbn: string
+          rating?: number | null
+          review?: string | null
+          title: string
+          total_pages: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author?: string | null
+          cover_url?: string | null
+          created_at?: string
+          current_page?: number | null
+          genres?: string[] | null
+          id?: string
+          is_completed?: boolean | null
+          isbn?: string
+          rating?: number | null
+          review?: string | null
+          title?: string
+          total_pages?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_challenges: {
+        Row: {
+          challenge_date: string
+          challenge_type: string
+          created_at: string
+          current_progress: number
+          expires_at: string
+          id: string
+          is_completed: boolean
+          target_value: number
+          user_id: string
+        }
+        Insert: {
+          challenge_date?: string
+          challenge_type: string
+          created_at?: string
+          current_progress?: number
+          expires_at: string
+          id?: string
+          is_completed?: boolean
+          target_value: number
+          user_id: string
+        }
+        Update: {
+          challenge_date?: string
+          challenge_type?: string
+          created_at?: string
+          current_progress?: number
+          expires_at?: string
+          id?: string
+          is_completed?: boolean
+          target_value?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           created_at: string
@@ -50,6 +169,35 @@ export type Database = {
           },
         ]
       }
+      notes: {
+        Row: {
+          book_id: string
+          content: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          book_id: string
+          content: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          book_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -80,32 +228,78 @@ export type Database = {
         }
         Relationships: []
       }
-      snapshots: {
+      progress_entries: {
         Row: {
+          book_id: string
           created_at: string
           id: string
-          snapshot: Json
-          updated_at: string
-          user_id: string
-          version: number
+          pages_read: number
+          time_spent_minutes: number
         }
         Insert: {
+          book_id: string
           created_at?: string
           id?: string
-          snapshot: Json
-          updated_at?: string
-          user_id: string
-          version?: number
+          pages_read: number
+          time_spent_minutes: number
         }
         Update: {
+          book_id?: string
           created_at?: string
           id?: string
-          snapshot?: Json
+          pages_read?: number
+          time_spent_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_entries_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reading_stats: {
+        Row: {
+          books_completed: number
+          created_at: string
+          id: string
+          total_minutes: number
+          total_pages: number
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          books_completed?: number
+          created_at?: string
+          id?: string
+          total_minutes?: number
+          total_pages?: number
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          books_completed?: number
+          created_at?: string
+          id?: string
+          total_minutes?: number
+          total_pages?: number
           updated_at?: string
           user_id?: string
-          version?: number
+          week_start?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reading_stats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {

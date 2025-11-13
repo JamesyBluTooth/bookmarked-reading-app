@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAppStore } from "@/store/useAppStore";
-import { SyncManager } from "@/lib/syncManager";
 
 interface CompleteBookModalProps {
   open: boolean;
@@ -27,22 +26,23 @@ export const CompleteBookModal = ({
   const [review, setReview] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const updateBook = useAppStore((state) => state.updateBook);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      updateBook(bookId, {
-        is_completed: true,
-        current_page: totalPages,
-        rating: rating > 0 ? rating : undefined,
-        review: review.trim() || undefined,
-      });
+      const { error } = await supabase
+        .from("books")
+        .update({
+          is_completed: true,
+          current_page: totalPages,
+          rating: rating > 0 ? rating : null,
+          review: review.trim() || null,
+        })
+        .eq("id", bookId);
 
-      // Trigger sync to cloud
-      await SyncManager.uploadSnapshot();
+      if (error) throw error;
 
       toast({
         title: "Book completed!",

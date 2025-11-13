@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { CurrentlyReading } from "@/components/dashboard/CurrentlyReading";
 import { BookDetail } from "@/components/books/BookDetail";
 import { Gauge, Flame, Clock, BookCheck } from "lucide-react";
-import { useAppStore } from "@/store/useAppStore";
 
 interface DashboardStats {
   readingSpeed: number;
@@ -22,8 +22,6 @@ interface CurrentBook {
 }
 
 export const Dashboard = () => {
-  const books = useAppStore((state) => state.books);
-  const progressEntries = useAppStore((state) => state.progressEntries);
   const [stats, setStats] = useState<DashboardStats>({
     readingSpeed: 0,
     readingStreak: 0,
@@ -32,55 +30,75 @@ export const Dashboard = () => {
   });
   const [currentBook, setCurrentBook] = useState<CurrentBook | undefined>();
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();
-  }, [books, progressEntries]);
+  }, []);
 
-  const fetchDashboardData = () => {
-    // Calculate reading speed (pages per minute)
-    const totalPages = progressEntries.reduce((sum, entry) => sum + entry.pages_read, 0);
-    const totalMinutes = progressEntries.reduce((sum, entry) => sum + entry.time_spent_minutes, 0);
-    const readingSpeed = totalMinutes > 0 ? totalPages / totalMinutes : 0;
-
-    // Calculate total time read in hours
-    const totalTimeRead = totalMinutes / 60;
-
-    // Calculate reading streak (consecutive days with progress)
-    const readingStreak = calculateReadingStreak(progressEntries);
-
-    // Find currently reading book (not completed, has progress)
-    const inProgressBook = books.find(
-      (book) => !book.is_completed && book.current_page > 0
-    );
+  const fetchDashboardData = async () => {
+    setLoading(true);
     
-    if (inProgressBook) {
-      setCurrentBook({
-        id: inProgressBook.id,
-        title: inProgressBook.title,
-        author: inProgressBook.author,
-        cover_url: inProgressBook.cover_url,
-        current_page: inProgressBook.current_page,
-        total_pages: inProgressBook.total_pages,
-      });
-    } else {
-      setCurrentBook(undefined);
+    // Fetch progress entries for reading speed and total time
+    const { data: progressData } = await supabase
+      .from("progress_entries")
+      .select("pages_read, time_spent_minutes, created_at");
+
+    // Fetch books for currently reading and books completed this year
+    const { data: booksData } = await supabase
+      .from("books")
+      .select("*")
+      .order("updated_at", { ascending: false });
+
+    if (progressData) {
+      // Calculate reading speed (pages per minute)
+      const totalPages = progressData.reduce((sum, entry) => sum + entry.pages_read, 0);
+      const totalMinutes = progressData.reduce((sum, entry) => sum + entry.time_spent_minutes, 0);
+      const readingSpeed = totalMinutes > 0 ? totalPages / totalMinutes : 0;
+
+      // Calculate total time read in hours
+      const totalTimeRead = totalMinutes / 60;
+
+      // Calculate reading streak (consecutive days with progress)
+      const readingStreak = calculateReadingStreak(progressData);
+
+      setStats((prev) => ({
+        ...prev,
+        readingSpeed: parseFloat(readingSpeed.toFixed(2)),
+        readingStreak,
+        totalTimeRead: parseFloat(totalTimeRead.toFixed(1)),
+      }));
     }
 
-    // Count books completed this year
-    const currentYear = new Date().getFullYear();
-    const booksThisYear = books.filter((book) => {
-      if (!book.is_completed) return false;
-      const bookYear = new Date(book.updated_at).getFullYear();
-      return bookYear === currentYear;
-    }).length;
+    if (booksData) {
+      // Find currently reading book (not completed, has progress)
+      const inProgressBook = booksData.find(
+        (book) => !book.is_completed && book.current_page > 0
+      );
+      
+      if (inProgressBook) {
+        setCurrentBook({
+          id: inProgressBook.id,
+          title: inProgressBook.title,
+          author: inProgressBook.author,
+          cover_url: inProgressBook.cover_url,
+          current_page: inProgressBook.current_page,
+          total_pages: inProgressBook.total_pages,
+        });
+      }
 
-    setStats({
-      readingSpeed: parseFloat(readingSpeed.toFixed(2)),
-      readingStreak,
-      totalTimeRead: parseFloat(totalTimeRead.toFixed(1)),
-      booksCompletedThisYear: booksThisYear,
-    });
+      // Count books completed this year
+      const currentYear = new Date().getFullYear();
+      const booksThisYear = booksData.filter((book) => {
+        if (!book.is_completed) return false;
+        const bookYear = new Date(book.updated_at).getFullYear();
+        return bookYear === currentYear;
+      }).length;
+
+      setStats((prev) => ({ ...prev, booksCompletedThisYear: booksThisYear }));
+    }
+
+    setLoading(false);
   };
 
   const calculateReadingStreak = (progressData: any[]) => {
@@ -114,6 +132,17 @@ export const Dashboard = () => {
   const handleContinueReading = (bookId: string) => {
     setSelectedBookId(bookId);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
