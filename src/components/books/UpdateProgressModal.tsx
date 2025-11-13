@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAppStore } from "@/store/useAppStore";
+import { SyncManager } from "@/lib/syncManager";
 
 interface UpdateProgressModalProps {
   open: boolean;
@@ -27,6 +28,8 @@ export const UpdateProgressModal = ({
   const [timeSpent, setTimeSpent] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const addProgressEntry = useAppStore((state) => state.addProgressEntry);
+  const updateBook = useAppStore((state) => state.updateBook);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,24 +50,18 @@ export const UpdateProgressModal = ({
 
       const newCurrentPage = Math.min(currentPage + pages, totalPages);
 
-      // Insert progress entry
-      const { error: progressError } = await supabase
-        .from("progress_entries")
-        .insert({
-          book_id: bookId,
-          pages_read: pages,
-          time_spent_minutes: minutes,
-        });
-
-      if (progressError) throw progressError;
+      // Add progress entry
+      addProgressEntry({
+        book_id: bookId,
+        pages_read: pages,
+        time_spent_minutes: minutes,
+      });
 
       // Update book current page
-      const { error: updateError } = await supabase
-        .from("books")
-        .update({ current_page: newCurrentPage })
-        .eq("id", bookId);
+      updateBook(bookId, { current_page: newCurrentPage });
 
-      if (updateError) throw updateError;
+      // Trigger sync to cloud
+      await SyncManager.uploadSnapshot();
 
       toast({
         title: "Progress updated!",

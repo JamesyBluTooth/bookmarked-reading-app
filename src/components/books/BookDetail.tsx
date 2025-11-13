@@ -4,30 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BookOpen, Clock, FileText, Star, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { UpdateProgressModal } from "./UpdateProgressModal";
 import { AddNoteModal } from "./AddNoteModal";
 import { CompleteBookModal } from "./CompleteBookModal";
 import { TimelineItem } from "./TimelineItem";
+import { useAppStore } from "@/store/useAppStore";
+import { SyncManager } from "@/lib/syncManager";
+import { useToast } from "@/hooks/use-toast";
 
 interface BookDetailProps {
   bookId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
-}
-
-interface Book {
-  id: string;
-  title: string;
-  author?: string;
-  genres: string[];
-  cover_url?: string;
-  total_pages: number;
-  current_page: number;
-  is_completed: boolean;
-  rating?: number;
-  review?: string;
 }
 
 interface TimelineEntry {
@@ -42,52 +31,35 @@ interface TimelineEntry {
 }
 
 export const BookDetail = ({ bookId, open, onOpenChange, onUpdate }: BookDetailProps) => {
-  const [book, setBook] = useState<Book | null>(null);
+  const book = useAppStore((state) => state.getBook(bookId));
+  const getProgressEntries = useAppStore((state) => state.getProgressEntries);
+  const getNotes = useAppStore((state) => state.getNotes);
+  const updateBook = useAppStore((state) => state.updateBook);
+  const addNote = useAppStore((state) => state.addNote);
+  
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (open && bookId) {
-      fetchBookDetails();
+    if (open && bookId && book) {
       fetchTimeline();
     }
-  }, [open, bookId]);
+  }, [open, bookId, book]);
 
-  const fetchBookDetails = async () => {
-    const { data, error } = await supabase
-      .from("books")
-      .select("*")
-      .eq("id", bookId)
-      .single();
+  const fetchTimeline = () => {
+    if (!book) return;
+    
+    const progressEntries = getProgressEntries(bookId);
+    const notes = getNotes(bookId);
 
-    if (error) {
-      console.error("Error fetching book:", error);
-      return;
-    }
+    const timelineEntries: TimelineEntry[] = [];
 
-    setBook(data);
-  };
-
-  const fetchTimeline = async () => {
-    const [progressData, notesData] = await Promise.all([
-      supabase
-        .from("progress_entries")
-        .select("*")
-        .eq("book_id", bookId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("notes")
-        .select("*")
-        .eq("book_id", bookId)
-        .order("created_at", { ascending: false }),
-    ]);
-
-    const timelineItems: TimelineEntry[] = [];
-
-    progressData.data?.forEach((entry) => {
-      timelineItems.push({
+    // Add progress entries
+    progressEntries.forEach((entry) => {
+      timelineEntries.push({
         id: entry.id,
         type: 'progress',
         created_at: entry.created_at,
@@ -96,8 +68,9 @@ export const BookDetail = ({ bookId, open, onOpenChange, onUpdate }: BookDetailP
       });
     });
 
-    notesData.data?.forEach((note) => {
-      timelineItems.push({
+    // Add notes
+    notes.forEach((note) => {
+      timelineEntries.push({
         id: note.id,
         type: 'note',
         created_at: note.created_at,
@@ -105,173 +78,193 @@ export const BookDetail = ({ bookId, open, onOpenChange, onUpdate }: BookDetailP
       });
     });
 
-    timelineItems.sort((a, b) => 
+    // Add completion marker if book is completed
+    if (book.is_completed) {
+      timelineEntries.push({
+        id: `completion-${book.id}`,
+        type: 'completion',
+        created_at: book.updated_at,
+        rating: book.rating,
+        review: book.review,
+      });
+    }
+
+    // Sort by date descending
+    timelineEntries.sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
-    setTimeline(timelineItems);
+    setTimeline(timelineEntries);
   };
 
   const handleMarkIncomplete = async () => {
     if (!book) return;
 
-    const { error: updateError } = await supabase
-      .from("books")
-      .update({
-        is_completed: false,
-        current_page: Math.floor(book.total_pages * 0.99),
-        rating: null,
-        review: null,
-      })
-      .eq("id", bookId);
+    updateBook(book.id, {
+      is_completed: false,
+      current_page: 0,
+    });
 
-    if (updateError) {
-      console.error("Error marking incomplete:", updateError);
-      return;
-    }
+    addNote({
+      book_id: book.id,
+      content: "Marked as incomplete",
+    });
 
-    const { error: noteError } = await supabase
-      .from("notes")
-      .insert({
-        book_id: bookId,
-        content: "Marked incomplete",
-      });
+    await SyncManager.uploadSnapshot();
 
-    if (noteError) {
-      console.error("Error adding note:", noteError);
-    }
+    toast({
+      title: "Book marked as incomplete",
+      description: "You can start reading this book again.",
+    });
 
-    fetchBookDetails();
     fetchTimeline();
     onUpdate();
   };
 
-  if (!book) return null;
+  if (!book) {
+    return null;
+  }
+
+  const progressPercentage = book.total_pages > 0 
+    ? Math.round((book.current_page / book.total_pages) * 100) 
+    : 0;
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="text-2xl">{book.title}</DialogTitle>
+            <DialogTitle>Book Details</DialogTitle>
           </DialogHeader>
-
-          <div className="flex gap-6 pb-4 border-b">
-            <div className="w-32 h-44 bg-muted rounded-lg overflow-hidden flex-shrink-0 shadow-lg">
-              {book.cover_url ? (
+          
+          <div className="space-y-6">
+            {/* Book Header */}
+            <div className="flex gap-4">
+              {book.cover_url && (
                 <img
                   src={book.cover_url}
                   alt={book.title}
-                  className="w-full h-full object-cover"
+                  className="w-24 h-36 object-cover rounded-lg shadow-md"
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
-                  <BookOpen className="w-12 h-12 text-muted-foreground" />
-                </div>
               )}
+              <div className="flex-1 space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">{book.title}</h3>
+                {book.author && (
+                  <p className="text-muted-foreground">by {book.author}</p>
+                )}
+                {book.genres && book.genres.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {book.genres.map((genre, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {genre}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex-1 space-y-3">
-              {book.author && (
-                <p className="text-lg text-muted-foreground">{book.author}</p>
-              )}
-              
-              {book.genres.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {book.genres.map((genre) => (
-                    <Badge key={genre} variant="secondary">
-                      {genre}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <BookOpen className="w-4 h-4" />
-                <span>{book.total_pages} pages</span>
+            {/* Progress */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Progress</span>
+                <span className="font-medium text-foreground">
+                  {book.current_page} / {book.total_pages} pages ({progressPercentage}%)
+                </span>
               </div>
+              <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+            </div>
 
-              {book.is_completed ? (
-                <div className="space-y-2">
-                  <Badge className="bg-success text-success-foreground">
-                    <CheckCircle2 className="w-4 h-4 mr-1" />
-                    Completed
-                  </Badge>
+            {/* Action Buttons */}
+            {!book.is_completed ? (
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProgressModal(true)}
+                  className="flex items-center gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Update
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNoteModal(true)}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Note
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCompleteModal(true)}
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Complete
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-primary">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span className="font-medium">Completed!</span>
                   {book.rating && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 ml-2">
                       <Star className="w-4 h-4 fill-primary text-primary" />
-                      <span className="font-medium">{book.rating}/5</span>
+                      <span className="text-sm">{book.rating}/5</span>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="text-sm text-muted-foreground">
-                    Page {book.current_page} of {book.total_pages}
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
-                      style={{
-                        width: `${(book.current_page / book.total_pages) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2 pb-4">
-            {!book.is_completed ? (
-              <>
-                <Button onClick={() => setShowProgressModal(true)} className="flex-1">
-                  <Clock className="w-4 h-4 mr-2" />
-                  Update Progress
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMarkIncomplete}
+                >
+                  Mark as Incomplete
                 </Button>
-                <Button onClick={() => setShowNoteModal(true)} variant="secondary" className="flex-1">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Add Note
-                </Button>
-                <Button onClick={() => setShowCompleteModal(true)} variant="default" className="flex-1">
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Complete
-                </Button>
-              </>
-            ) : (
-              <Button onClick={handleMarkIncomplete} variant="outline" className="w-full">
-                Mark as Incomplete
-              </Button>
+              </div>
             )}
-          </div>
 
-          <ScrollArea className="flex-1 -mx-6 px-6">
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Timeline</h3>
-              {timeline.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No activity yet. Start tracking your progress!
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {timeline.map((entry) => (
-                    <TimelineItem key={entry.id} entry={entry} />
-                  ))}
-                </div>
-              )}
+            {/* Timeline */}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-foreground flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Reading History
+              </h4>
+              <ScrollArea className="h-64 rounded-md border border-border p-4">
+                {timeline.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No activity yet. Start reading to see your progress!
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {timeline.map((entry) => (
+                      <TimelineItem key={entry.id} entry={entry} />
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
+      {/* Modals */}
       <UpdateProgressModal
         open={showProgressModal}
         onOpenChange={setShowProgressModal}
-        bookId={bookId}
+        bookId={book.id}
         currentPage={book.current_page}
         totalPages={book.total_pages}
         onUpdate={() => {
-          fetchBookDetails();
           fetchTimeline();
           onUpdate();
         }}
@@ -280,19 +273,19 @@ export const BookDetail = ({ bookId, open, onOpenChange, onUpdate }: BookDetailP
       <AddNoteModal
         open={showNoteModal}
         onOpenChange={setShowNoteModal}
-        bookId={bookId}
+        bookId={book.id}
         onUpdate={() => {
           fetchTimeline();
+          onUpdate();
         }}
       />
 
       <CompleteBookModal
         open={showCompleteModal}
         onOpenChange={setShowCompleteModal}
-        bookId={bookId}
+        bookId={book.id}
         totalPages={book.total_pages}
         onUpdate={() => {
-          fetchBookDetails();
           fetchTimeline();
           onUpdate();
         }}

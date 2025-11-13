@@ -1,42 +1,16 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { AddBookForm } from "@/components/books/AddBookForm";
 import { BookCard } from "@/components/books/BookCard";
 import { BookDetail } from "@/components/books/BookDetail";
 import { BookMarked } from "lucide-react";
-
-interface Book {
-  id: string;
-  title: string;
-  author?: string;
-  cover_url?: string;
-  current_page: number;
-  total_pages: number;
-  is_completed: boolean;
-}
+import { useAppStore } from "@/store/useAppStore";
 
 export const Books = () => {
-  const [books, setBooks] = useState<Book[]>([]);
+  const books = useAppStore((state) => state.books);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchBooks();
-  }, []);
-
-  const fetchBooks = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("books")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching books:", error);
-    } else {
-      setBooks(data || []);
-    }
-    setLoading(false);
+  const fetchBooks = () => {
+    // Books are automatically in sync via Zustand
   };
 
   return (
@@ -49,9 +23,7 @@ export const Books = () => {
 
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">My Books</h2>
-            {loading ? (
-              <div className="text-center py-12 text-muted-foreground">Loading...</div>
-            ) : books.length === 0 ? (
+            {books.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <BookMarked className="w-16 h-16 mx-auto mb-4 opacity-50" />
                 <p>No books yet. Add your first book by entering an ISBN above!</p>

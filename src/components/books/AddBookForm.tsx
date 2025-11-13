@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Search } from "lucide-react";
 import { fetchBookByISBN } from "@/lib/googleBooks";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAppStore } from "@/store/useAppStore";
+import { SyncManager } from "@/lib/syncManager";
 
 interface AddBookFormProps {
   onBookAdded: () => void;
@@ -15,6 +16,7 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
   const [isbn, setIsbn] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const addBook = useAppStore((state) => state.addBook);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,23 +34,19 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      const { error } = await supabase.from("books").insert({
-        user_id: user.id,
+      addBook({
         isbn: isbn,
         title: bookData.title,
-        author: bookData.authors?.join(", "),
+        author: bookData.authors?.join(", ") || "Unknown",
         genres: bookData.categories || [],
         cover_url: bookData.imageLinks?.thumbnail?.replace('http:', 'https:'),
         total_pages: bookData.pageCount || 0,
+        current_page: 0,
+        is_completed: false,
       });
 
-      if (error) throw error;
+      // Trigger sync to cloud
+      await SyncManager.uploadSnapshot();
 
       toast({
         title: "Book added!",

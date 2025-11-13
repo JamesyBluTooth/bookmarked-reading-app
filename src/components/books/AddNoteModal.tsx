@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAppStore } from "@/store/useAppStore";
+import { SyncManager } from "@/lib/syncManager";
 
 interface AddNoteModalProps {
   open: boolean;
@@ -22,20 +23,20 @@ export const AddNoteModal = ({
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const addNote = useAppStore((state) => state.addNote);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from("notes")
-        .insert({
-          book_id: bookId,
-          content: note,
-        });
+      addNote({
+        book_id: bookId,
+        content: note,
+      });
 
-      if (error) throw error;
+      // Trigger sync to cloud
+      await SyncManager.uploadSnapshot();
 
       toast({
         title: "Note added!",

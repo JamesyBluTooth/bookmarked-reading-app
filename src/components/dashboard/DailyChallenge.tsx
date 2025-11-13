@@ -1,21 +1,17 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Clock, BookOpen, FileText, Timer } from "lucide-react";
 import { TrophyAnimation } from "./TrophyAnimation";
-
-interface DailyChallenge {
-  id: string;
-  challenge_type: "pages" | "book" | "time";
-  target_value: number;
-  current_progress: number;
-  is_completed: boolean;
-  expires_at: string;
-  challenge_date: string;
-}
+import { useAppStore, type DailyChallenge as DailyChallengeType } from "@/store/useAppStore";
+import { SyncManager } from "@/lib/syncManager";
 
 export const DailyChallenge = () => {
-  const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
+  const challenge = useAppStore((state) => state.getCurrentChallenge());
+  const setDailyChallenge = useAppStore((state) => state.setDailyChallenge);
+  const updateChallengeProgress = useAppStore((state) => state.updateChallengeProgress);
+  const books = useAppStore((state) => state.books);
+  const progressEntries = useAppStore((state) => state.progressEntries);
+  
   const [timeRemaining, setTimeRemaining] = useState("");
   const [showAnimation, setShowAnimation] = useState(false);
   const [animationSuccess, setAnimationSuccess] = useState(false);
@@ -26,11 +22,11 @@ export const DailyChallenge = () => {
     const interval = setInterval(() => {
       updateTimer();
       if (challenge) {
-        updateChallengeProgress(challenge);
+        updateProgress(challenge);
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [challenge?.id]);
+  }, [challenge?.id, progressEntries, books]);
 
   const hasShownAnimation = (challengeId: string): boolean => {
     try {
@@ -54,130 +50,98 @@ export const DailyChallenge = () => {
   };
 
   const loadChallenge = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    const dailyChallenges = useAppStore.getState().dailyChallenges;
+    
+    // Check for yesterday's challenge first
+    if (!previousChallengeChecked) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-      // Check for yesterday's challenge first
-      if (!previousChallengeChecked) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const previousChallenge = dailyChallenges.find(c => c.challenge_date === yesterdayStr);
 
-        const { data: previousChallenge } = await supabase
-          .from("daily_challenges")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("challenge_date", yesterdayStr)
-          .single();
-
-        if (previousChallenge && !previousChallengeChecked && !hasShownAnimation(previousChallenge.id)) {
-          setPreviousChallengeChecked(true);
-          setAnimationSuccess(previousChallenge.is_completed);
-          setShowAnimation(true);
-          markAnimationAsShown(previousChallenge.id);
-        } else {
-          setPreviousChallengeChecked(true);
-        }
-      }
-
-      // Get today's challenge
-      const { data: existingChallenge } = await supabase
-        .from("daily_challenges")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("challenge_date", new Date().toISOString().split('T')[0])
-        .single();
-
-      if (existingChallenge) {
-        const typedChallenge = existingChallenge as DailyChallenge;
-        setChallenge(typedChallenge);
-        updateChallengeProgress(typedChallenge);
+      if (previousChallenge && !hasShownAnimation(previousChallenge.id)) {
+        setPreviousChallengeChecked(true);
+        setAnimationSuccess(previousChallenge.is_completed);
+        setShowAnimation(true);
+        markAnimationAsShown(previousChallenge.id);
       } else {
-        // Generate new challenge
-        const { data: newChallengeId } = await supabase.rpc(
-          "generate_daily_challenge",
-          { p_user_id: user.id }
-        );
-
-        if (newChallengeId) {
-          const { data: newChallenge } = await supabase
-            .from("daily_challenges")
-            .select("*")
-            .eq("id", newChallengeId)
-            .single();
-
-          if (newChallenge) {
-            setChallenge(newChallenge as DailyChallenge);
-          }
-        }
+        setPreviousChallengeChecked(true);
       }
-    } catch (error) {
-      console.error("Error loading challenge:", error);
+    }
+
+    // Get today's challenge
+    const today = new Date().toISOString().split('T')[0];
+    const existingChallenge = dailyChallenges.find(c => c.challenge_date === today);
+
+    if (existingChallenge) {
+      updateProgress(existingChallenge);
+    } else {
+      // Generate new challenge
+      generateChallenge();
     }
   };
 
-  const updateChallengeProgress = async (currentChallenge: DailyChallenge) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const generateChallenge = () => {
+    const random = Math.random();
+    let challengeType: "pages" | "time" | "book";
+    let targetValue: number;
 
-      let progress = 0;
+    if (random < 0.33) {
+      challengeType = "pages";
+      targetValue = 10 + Math.floor(Math.random() * 41); // 10-50 pages
+    } else if (random < 0.66) {
+      challengeType = "time";
+      targetValue = 15 + Math.floor(Math.random() * 46); // 15-60 minutes
+    } else {
+      challengeType = "book";
+      targetValue = 1;
+    }
 
-      if (currentChallenge.challenge_type === "pages") {
-        // Sum pages read today from progress_entries
-        const today = new Date().toISOString().split('T')[0];
-        const { data: entries } = await supabase
-          .from("progress_entries")
-          .select("pages_read, created_at, book_id")
-          .gte("created_at", today);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-        if (entries) {
-          progress = entries.reduce((sum, entry) => sum + entry.pages_read, 0);
-        }
-      } else if (currentChallenge.challenge_type === "time") {
-        // Sum time spent today
-        const today = new Date().toISOString().split('T')[0];
-        const { data: entries } = await supabase
-          .from("progress_entries")
-          .select("time_spent_minutes, created_at")
-          .gte("created_at", today);
+    const newChallenge: DailyChallengeType = {
+      id: crypto.randomUUID(),
+      challenge_type: challengeType,
+      target_value: targetValue,
+      current_progress: 0,
+      is_completed: false,
+      challenge_date: today.toISOString().split('T')[0],
+      expires_at: tomorrow.toISOString(),
+      created_at: new Date().toISOString(),
+    };
 
-        if (entries) {
-          progress = entries.reduce((sum, entry) => sum + entry.time_spent_minutes, 0);
-        }
-      } else if (currentChallenge.challenge_type === "book") {
-        // Check if any book was completed today
-        const today = new Date().toISOString().split('T')[0];
-        const { data: books } = await supabase
-          .from("books")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("is_completed", true)
-          .gte("updated_at", today);
+    setDailyChallenge(newChallenge);
+    SyncManager.uploadSnapshot();
+  };
 
-        progress = books && books.length > 0 ? 1 : 0;
-      }
+  const updateProgress = (currentChallenge: DailyChallengeType) => {
+    let progress = 0;
+    const today = new Date().toISOString().split('T')[0];
 
-      const isCompleted = progress >= currentChallenge.target_value;
+    if (currentChallenge.challenge_type === "pages") {
+      // Sum pages read today
+      progress = progressEntries
+        .filter(entry => entry.created_at.startsWith(today))
+        .reduce((sum, entry) => sum + entry.pages_read, 0);
+    } else if (currentChallenge.challenge_type === "time") {
+      // Sum time spent today
+      progress = progressEntries
+        .filter(entry => entry.created_at.startsWith(today))
+        .reduce((sum, entry) => sum + entry.time_spent_minutes, 0);
+    } else if (currentChallenge.challenge_type === "book") {
+      // Check if any book was completed today
+      const completedToday = books.some(book => 
+        book.is_completed && book.updated_at.startsWith(today)
+      );
+      progress = completedToday ? 1 : 0;
+    }
 
-      if (progress !== currentChallenge.current_progress || isCompleted !== currentChallenge.is_completed) {
-        await supabase
-          .from("daily_challenges")
-          .update({
-            current_progress: progress,
-            is_completed: isCompleted
-          })
-          .eq("id", currentChallenge.id);
-
-        setChallenge({
-          ...currentChallenge,
-          current_progress: progress,
-          is_completed: isCompleted
-        });
-      }
-    } catch (error) {
-      console.error("Error updating challenge progress:", error);
+    if (progress !== currentChallenge.current_progress) {
+      updateChallengeProgress(currentChallenge.id, progress);
+      SyncManager.uploadSnapshot();
     }
   };
 
