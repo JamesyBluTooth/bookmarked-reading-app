@@ -12,22 +12,48 @@ import { MobileNav } from "@/components/MobileNav";
 import { DailyChallenge } from "@/components/dashboard/DailyChallenge";
 import { FriendFeed } from "@/components/dashboard/FriendFeed";
 import { SplashScreen } from "@/components/SplashScreen";
+import { OnboardingContainer } from "@/components/onboarding/OnboardingContainer";
 
 const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social">("dashboard");
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
+
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("user_id", session.user.id)
+          .single();
+
+        setShowOnboarding(!profile?.onboarding_completed);
+      }
+
       setLoading(false);
-    });
+    };
+
+    initAuth();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
+
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("user_id", session.user.id)
+          .single();
+
+        setShowOnboarding(!profile?.onboarding_completed);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -43,6 +69,10 @@ const Index = () => {
 
   if (!session) {
     return <AuthPage />;
+  }
+
+  if (showOnboarding) {
+    return <OnboardingContainer onComplete={() => setShowOnboarding(false)} />;
   }
 
   return (
