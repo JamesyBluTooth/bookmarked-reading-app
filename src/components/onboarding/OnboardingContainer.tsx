@@ -40,6 +40,8 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
     const handleWheel = (e: WheelEvent) => {
       if (e.deltaY < -50 && !isTransitioning) {
         handleNextStep();
+      } else if (e.deltaY > 50 && !isTransitioning && currentStep > 0) {
+        handlePreviousStep();
       }
     };
 
@@ -60,7 +62,17 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
 
     if (diff < -100 && !isTransitioning) {
       handleNextStep();
+    } else if (diff > 100 && !isTransitioning && currentStep > 0) {
+      handlePreviousStep();
     }
+  };
+
+  const handlePreviousStep = () => {
+    if (isTransitioning || currentStep === 0) return;
+    
+    setIsTransitioning(true);
+    setCurrentStep((prev) => prev - 1);
+    setTimeout(() => setIsTransitioning(false), 500);
   };
 
   const handleNextStep = async () => {
