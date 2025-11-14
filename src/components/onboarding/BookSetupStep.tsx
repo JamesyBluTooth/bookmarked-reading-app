@@ -22,7 +22,7 @@ export const BookSetupStep = ({ onBookAdded }: BookSetupStepProps) => {
 
     try {
       const bookData = await fetchBookByISBN(isbn);
-      Alert.alert("Error with Google Books");
+      alert("Reached fetchBookByISBN");
 
       if (!bookData) {
         toast({
