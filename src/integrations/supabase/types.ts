@@ -17,21 +17,21 @@ export type Database = {
       achievements: {
         Row: {
           achievement_type: string
-          earned_at: string
+          created_at: string
           id: string
           metadata: Json | null
           user_id: string
         }
         Insert: {
           achievement_type: string
-          earned_at?: string
+          created_at?: string
           id?: string
           metadata?: Json | null
           user_id: string
         }
         Update: {
           achievement_type?: string
-          earned_at?: string
+          created_at?: string
           id?: string
           metadata?: Json | null
           user_id?: string
@@ -49,89 +49,129 @@ export type Database = {
       books: {
         Row: {
           author: string | null
+          completed_at: string | null
           cover_url: string | null
           created_at: string
           current_page: number | null
           genres: string[] | null
+          google_books_id: string | null
           id: string
           is_completed: boolean | null
-          isbn: string
+          isbn: string | null
           rating: number | null
           review: string | null
+          started_at: string | null
+          status: string
           title: string
-          total_pages: number
+          total_pages: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           author?: string | null
+          completed_at?: string | null
           cover_url?: string | null
           created_at?: string
           current_page?: number | null
           genres?: string[] | null
+          google_books_id?: string | null
           id?: string
           is_completed?: boolean | null
-          isbn: string
+          isbn?: string | null
           rating?: number | null
           review?: string | null
+          started_at?: string | null
+          status?: string
           title: string
-          total_pages: number
+          total_pages?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           author?: string | null
+          completed_at?: string | null
           cover_url?: string | null
           created_at?: string
           current_page?: number | null
           genres?: string[] | null
+          google_books_id?: string | null
           id?: string
           is_completed?: boolean | null
-          isbn?: string
+          isbn?: string | null
           rating?: number | null
           review?: string | null
+          started_at?: string | null
+          status?: string
           title?: string
-          total_pages?: number
+          total_pages?: number | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "books_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       daily_challenges: {
         Row: {
           challenge_date: string
           challenge_type: string
+          completed: boolean
+          completed_at: string | null
           created_at: string
-          current_progress: number
+          current_progress: number | null
+          current_value: number
           expires_at: string
           id: string
-          is_completed: boolean
+          is_completed: boolean | null
           target_value: number
+          updated_at: string
           user_id: string
         }
         Insert: {
-          challenge_date?: string
+          challenge_date: string
           challenge_type: string
+          completed?: boolean
+          completed_at?: string | null
           created_at?: string
-          current_progress?: number
+          current_progress?: number | null
+          current_value?: number
           expires_at: string
           id?: string
-          is_completed?: boolean
+          is_completed?: boolean | null
           target_value: number
+          updated_at?: string
           user_id: string
         }
         Update: {
           challenge_date?: string
           challenge_type?: string
+          completed?: boolean
+          completed_at?: string | null
           created_at?: string
-          current_progress?: number
+          current_progress?: number | null
+          current_value?: number
           expires_at?: string
           id?: string
-          is_completed?: boolean
+          is_completed?: boolean | null
           target_value?: number
+          updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "daily_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       friendships: {
         Row: {
@@ -175,18 +215,27 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          page_number: number | null
+          updated_at: string
+          user_id: string
         }
         Insert: {
           book_id: string
           content: string
           created_at?: string
           id?: string
+          page_number?: number | null
+          updated_at?: string
+          user_id: string
         }
         Update: {
           book_id?: string
           content?: string
           created_at?: string
           id?: string
+          page_number?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -196,33 +245,52 @@ export type Database = {
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
+          daily_goal_type: string | null
+          daily_goal_value: number | null
           display_name: string | null
           friend_code: string
           id: string
+          onboarding_completed: boolean | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          daily_goal_type?: string | null
+          daily_goal_value?: number | null
           display_name?: string | null
           friend_code: string
           id?: string
+          onboarding_completed?: boolean | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          daily_goal_type?: string | null
+          daily_goal_value?: number | null
           display_name?: string | null
           friend_code?: string
           id?: string
+          onboarding_completed?: boolean | null
           updated_at?: string
           user_id?: string
         }
@@ -234,21 +302,24 @@ export type Database = {
           created_at: string
           id: string
           pages_read: number
-          time_spent_minutes: number
+          time_spent_minutes: number | null
+          user_id: string
         }
         Insert: {
           book_id: string
           created_at?: string
           id?: string
           pages_read: number
-          time_spent_minutes: number
+          time_spent_minutes?: number | null
+          user_id: string
         }
         Update: {
           book_id?: string
           created_at?: string
           id?: string
           pages_read?: number
-          time_spent_minutes?: number
+          time_spent_minutes?: number | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -257,6 +328,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -300,6 +378,33 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          snapshot: Json
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          snapshot: Json
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          snapshot?: Json
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
       }
     }
     Views: {
