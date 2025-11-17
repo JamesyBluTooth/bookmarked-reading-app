@@ -6,6 +6,7 @@ import { Books } from "./Books";
 import Profile from "./Profile";
 import ChallengeHistory from "./ChallengeHistory";
 import { Social } from "./Social";
+import Settings from "./Settings";
 import { Sidebar } from "@/components/Sidebar";
 import { RightPanel } from "@/components/RightPanel";
 import { MobileNav } from "@/components/MobileNav";
@@ -18,7 +19,7 @@ const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings">("dashboard");
 
   useEffect(() => {
     const initAuth = async () => {
@@ -86,6 +87,7 @@ const Index = () => {
           {activeTab === "challenge-history" && <ChallengeHistory />}
           {activeTab === "social" && <Social />}
           {activeTab === "profile" && <Profile />}
+          {activeTab === "settings" && <Settings />}
         </div>
 
         {/* Mobile: Show right panel content below main content */}

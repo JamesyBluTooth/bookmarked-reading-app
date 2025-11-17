@@ -2,8 +2,8 @@ import { Home, Library, User, Trophy, Users, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileNavProps {
-  activeTab: "dashboard" | "books" | "profile" | "challenge-history" | "social";
-  onTabChange: (tab: "dashboard" | "books" | "profile" | "challenge-history" | "social") => void;
+  activeTab: "dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings";
+  onTabChange: (tab: "dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings") => void;
   onSignOut: () => void;
 }
 

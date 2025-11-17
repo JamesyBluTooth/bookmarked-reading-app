@@ -261,10 +261,20 @@ export type Database = {
           created_at: string
           daily_goal_type: string | null
           daily_goal_value: number | null
+          discoverable_by_friend_code: boolean | null
           display_name: string | null
           friend_code: string
           id: string
+          notifications_achievements: boolean | null
+          notifications_friend_activity: boolean | null
+          notifications_reading_reminders: boolean | null
+          notifications_weekly_summary: boolean | null
           onboarding_completed: boolean | null
+          progress_update_style: string | null
+          reading_unit_preference: string | null
+          show_spoiler_warnings: boolean | null
+          text_size_preference: number | null
+          theme_preference: string | null
           updated_at: string
           user_id: string
         }
@@ -274,10 +284,20 @@ export type Database = {
           created_at?: string
           daily_goal_type?: string | null
           daily_goal_value?: number | null
+          discoverable_by_friend_code?: boolean | null
           display_name?: string | null
           friend_code: string
           id?: string
+          notifications_achievements?: boolean | null
+          notifications_friend_activity?: boolean | null
+          notifications_reading_reminders?: boolean | null
+          notifications_weekly_summary?: boolean | null
           onboarding_completed?: boolean | null
+          progress_update_style?: string | null
+          reading_unit_preference?: string | null
+          show_spoiler_warnings?: boolean | null
+          text_size_preference?: number | null
+          theme_preference?: string | null
           updated_at?: string
           user_id: string
         }
@@ -287,10 +307,20 @@ export type Database = {
           created_at?: string
           daily_goal_type?: string | null
           daily_goal_value?: number | null
+          discoverable_by_friend_code?: boolean | null
           display_name?: string | null
           friend_code?: string
           id?: string
+          notifications_achievements?: boolean | null
+          notifications_friend_activity?: boolean | null
+          notifications_reading_reminders?: boolean | null
+          notifications_weekly_summary?: boolean | null
           onboarding_completed?: boolean | null
+          progress_update_style?: string | null
+          reading_unit_preference?: string | null
+          show_spoiler_warnings?: boolean | null
+          text_size_preference?: number | null
+          theme_preference?: string | null
           updated_at?: string
           user_id?: string
         }
