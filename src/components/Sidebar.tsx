@@ -2,8 +2,8 @@ import { BookMarked, Home, Library, User, Settings, Trophy, Users, LogOut } from
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  activeTab: "dashboard" | "books" | "profile" | "challenge-history" | "social";
-  onTabChange: (tab: "dashboard" | "books" | "profile" | "challenge-history" | "social") => void;
+  activeTab: "dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings";
+  onTabChange: (tab: "dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings") => void;
   onSignOut: () => void;
 }
 
@@ -84,7 +84,13 @@ export const Sidebar = ({ activeTab, onTabChange, onSignOut }: SidebarProps) => 
         </button>
 
         <button
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+          onClick={() => onTabChange("settings")}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
+            activeTab === "settings"
+              ? "bg-muted text-foreground shadow-sm"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
         >
           <Settings className="w-5 h-5" />
           <span className="font-medium">Settings</span>
