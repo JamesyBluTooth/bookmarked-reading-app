@@ -64,12 +64,12 @@ const Index = () => {
     await supabase.auth.signOut();
   };
 
-  if (loading) {
-    return <SplashScreen />;
-  }
-
   if (!session) {
     return <AuthPage />;
+  }
+
+  if (loading) {
+    return <SplashScreen />;
   }
 
   if (showOnboarding) {
