@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthPage } from "@/components/auth/AuthPage";
 import { Dashboard } from "./Dashboard";
@@ -22,6 +22,7 @@ const Index = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings">("dashboard");
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -60,13 +61,14 @@ const Index = () => {
           variant: "destructive",
         });
       } finally {
+        hasInitialized.current = true;
         setLoading(false);
       }
     };
 
     // Set a timeout to prevent infinite loading
     const timeout = setTimeout(() => {
-      if (loading) {
+      if (!hasInitialized.current) {
         setLoading(false);
         setError("Loading timeout. Please refresh the page.");
         toast({
