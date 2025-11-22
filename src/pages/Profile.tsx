@@ -8,7 +8,7 @@ import { profileSchema } from "@/lib/validation";
 import { AvatarDisplay } from "@/components/profile/AvatarDisplay";
 import { AvatarSetupModal } from "@/components/profile/AvatarSetupModal";
 import { useNavigate } from "react-router-dom";
-import { Pencil } from "lucide-react";
+import { Pencil, Settings } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -178,6 +178,15 @@ export default function Profile() {
 
             <Button onClick={handleUpdateProfile} className="w-full">
               Save Changes
+            </Button>
+
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/settings")}
+              className="w-full"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
             </Button>
           </div>
         </div>
