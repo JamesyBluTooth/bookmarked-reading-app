@@ -1,6 +1,11 @@
 export interface AvatarOptions {
   backgroundColor?: string;
   size?: number;
+  eyes?: string[];
+  face?: string[];
+  hair?: string[];
+  mouth?: string[];
+  nose?: string[];
 }
 
 export const generateAvatarUrl = (seed: string, options?: AvatarOptions): string => {
@@ -8,8 +13,26 @@ export const generateAvatarUrl = (seed: string, options?: AvatarOptions): string
   const params = new URLSearchParams({
     seed,
     backgroundColor: options?.backgroundColor || 'b6e3f4',
-    ...(options?.size && { size: options.size.toString() })
+    ...(options?.size && { size: options.size.toString() }),
   });
+
+  // Add array-based options
+  if (options?.eyes && options.eyes.length > 0) {
+    params.append('eyes', options.eyes.join(','));
+  }
+  if (options?.face && options.face.length > 0) {
+    params.append('face', options.face.join(','));
+  }
+  if (options?.hair && options.hair.length > 0) {
+    params.append('hair', options.hair.join(','));
+  }
+  if (options?.mouth && options.mouth.length > 0) {
+    params.append('mouth', options.mouth.join(','));
+  }
+  if (options?.nose && options.nose.length > 0) {
+    params.append('nose', options.nose.join(','));
+  }
+
   return `${baseUrl}?${params.toString()}`;
 };
 
@@ -31,3 +54,11 @@ export const BACKGROUND_COLORS = [
   { name: 'Coral', value: 'f7b5b5' },
   { name: 'Teal', value: 'b5f7f4' },
 ];
+
+export const AVATAR_FEATURES = {
+  eyes: ['open', 'closed', 'happy', 'sleep', 'surprised', 'wink'],
+  face: ['square', 'round'],
+  hair: ['full', 'short', 'buzzcut', 'bald', 'long'],
+  mouth: ['smile', 'smirk', 'open', 'serious'],
+  nose: ['small', 'medium', 'large', 'pointed'],
+};

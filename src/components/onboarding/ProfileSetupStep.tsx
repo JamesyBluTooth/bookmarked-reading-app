@@ -1,21 +1,14 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AvatarCustomizer } from "@/components/profile/AvatarCustomizer";
 
 interface ProfileSetupStepProps {
   data: {
     displayName: string;
-    avatarUrl: string | null;
-    avatarSeed: string | null;
-    avatarType: 'upload' | 'generated';
     bio: string;
   };
   onChange: (data: { 
     displayName: string; 
-    avatarUrl: string | null;
-    avatarSeed: string | null;
-    avatarType: 'upload' | 'generated';
     bio: string;
   }) => void;
 }
@@ -27,13 +20,6 @@ export const ProfileSetupStep = ({ data, onChange }: ProfileSetupStepProps) => {
         <h1 className="text-3xl font-bold text-foreground">Welcome! 👋</h1>
         <p className="text-muted-foreground">Let's set up your profile</p>
       </div>
-
-      <AvatarCustomizer
-        avatarType={data.avatarType}
-        avatarUrl={data.avatarUrl}
-        avatarSeed={data.avatarSeed}
-        onAvatarChange={(avatarData) => onChange({ ...data, ...avatarData })}
-      />
 
       <div className="w-full space-y-4">
         <div className="space-y-2">

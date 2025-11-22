@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { profileSchema } from "@/lib/validation";
-import { generateRandomSeed } from "@/lib/avatarGenerator";
 
 interface OnboardingContainerProps {
   onComplete: () => void;
@@ -22,15 +21,9 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
 
   const [profileData, setProfileData] = useState<{
     displayName: string;
-    avatarUrl: string | null;
-    avatarSeed: string | null;
-    avatarType: 'upload' | 'generated';
     bio: string;
   }>({
     displayName: "",
-    avatarUrl: null,
-    avatarSeed: generateRandomSeed(),
-    avatarType: 'generated',
     bio: "",
   });
 
@@ -117,9 +110,6 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
           .from("profiles")
           .update({
             display_name: result.data.display_name,
-            avatar_url: profileData.avatarUrl,
-            avatar_seed: profileData.avatarSeed,
-            avatar_type: profileData.avatarType,
             bio: result.data.bio || null,
           })
           .eq("user_id", user.id);

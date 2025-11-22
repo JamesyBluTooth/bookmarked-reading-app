@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { User } from "lucide-react";
-import { AvatarCustomizer } from "@/components/profile/AvatarCustomizer";
-import { generateAvatarUrl } from "@/lib/avatarGenerator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { profileSchema } from "@/lib/validation";
+import { AvatarDisplay } from "@/components/profile/AvatarDisplay";
+import { AvatarSetupModal } from "@/components/profile/AvatarSetupModal";
+import { useNavigate } from "react-router-dom";
+import { Pencil } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -23,7 +23,9 @@ export default function Profile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showAvatarSetup, setShowAvatarSetup] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadProfile();
@@ -56,9 +58,15 @@ export default function Profile() {
         if (insertError) throw insertError;
         setProfile(newProfile);
         setDisplayName(newProfile.display_name || "");
+        setShowAvatarSetup(true); // New users should set up avatar
       } else {
         setProfile(data);
         setDisplayName(data.display_name || "");
+        
+        // Check if this is the first time visiting profile without an avatar
+        if (!data.avatar_seed && !data.avatar_url) {
+          setShowAvatarSetup(true);
+        }
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -69,47 +77,6 @@ export default function Profile() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAvatarChange = async (data: {
-    avatarType: 'upload' | 'generated';
-    avatarUrl: string | null;
-    avatarSeed: string | null;
-  }) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          avatar_url: data.avatarUrl,
-          avatar_seed: data.avatarSeed,
-          avatar_type: data.avatarType,
-        })
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      setProfile((prev) => prev ? {
-        ...prev,
-        avatar_url: data.avatarUrl,
-        avatar_seed: data.avatarSeed,
-        avatar_type: data.avatarType,
-      } : null);
-
-      toast({
-        title: "Success",
-        description: "Avatar updated successfully",
-      });
-    } catch (error) {
-      console.error("Error updating avatar:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update avatar",
-        variant: "destructive",
-      });
     }
   };
 
@@ -162,53 +129,59 @@ export default function Profile() {
     );
   }
 
-  const displayAvatarUrl = profile?.avatar_type === 'generated' && profile?.avatar_seed
-    ? generateAvatarUrl(profile.avatar_seed)
-    : profile?.avatar_url;
-
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Profile</h1>
+    <>
+      <AvatarSetupModal 
+        open={showAvatarSetup} 
+        onOpenChange={setShowAvatarSetup}
+      />
+      
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Profile</h1>
 
-      <div className="bg-card border-2 border-border rounded-2xl p-6 shadow-md">
-        <div className="flex flex-col items-center mb-6">
-          <Avatar className="h-32 w-32 mb-4">
-            <AvatarImage src={displayAvatarUrl || undefined} />
-            <AvatarFallback>
-              <User className="h-16 w-16" />
-            </AvatarFallback>
-          </Avatar>
-
-          <AvatarCustomizer
-            avatarType={(profile?.avatar_type as 'upload' | 'generated') || 'generated'}
-            avatarUrl={profile?.avatar_url || null}
-            avatarSeed={profile?.avatar_seed || null}
-            onAvatarChange={handleAvatarChange}
-          />
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="display-name">Display Name</Label>
-            <Input
-              id="display-name"
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Enter your display name"
-              maxLength={50}
-              className="mt-1"
-            />
-            <p className="text-xs text-muted-foreground text-right">
-              {displayName.length}/50 characters
-            </p>
+        <div className="bg-card border-2 border-border rounded-2xl p-6 shadow-md">
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative group">
+              <AvatarDisplay 
+                avatarType={profile?.avatar_type}
+                avatarUrl={profile?.avatar_url}
+                avatarSeed={profile?.avatar_seed}
+                displayName={profile?.display_name}
+                className="h-32 w-32"
+              />
+              <button
+                onClick={() => navigate("/customize-avatar")}
+                className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 shadow-lg hover:scale-110 transition-transform"
+                title="Edit Avatar"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          <Button onClick={handleUpdateProfile} className="w-full">
-            Save Changes
-          </Button>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="display-name">Display Name</Label>
+              <Input
+                id="display-name"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Enter your display name"
+                maxLength={50}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {displayName.length}/50 characters
+              </p>
+            </div>
+
+            <Button onClick={handleUpdateProfile} className="w-full">
+              Save Changes
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
