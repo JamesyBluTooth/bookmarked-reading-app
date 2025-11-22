@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { User } from "lucide-react";
+import { AvatarCustomizer } from "@/components/profile/AvatarCustomizer";
+import { generateAvatarUrl } from "@/lib/avatarGenerator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { Upload, User } from "lucide-react";
 import { profileSchema } from "@/lib/validation";
 
 interface Profile {
@@ -13,12 +15,13 @@ interface Profile {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
+  avatar_seed: string | null;
+  avatar_type: string | null;
 }
 
 export default function Profile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -69,72 +72,44 @@ export default function Profile() {
     }
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (data: {
+    avatarType: 'upload' | 'generated';
+    avatarUrl: string | null;
+    avatarSeed: string | null;
+  }) => {
     try {
-      setUploading(true);
-
-      if (!event.target.files || event.target.files.length === 0) {
-        return;
-      }
-
-      const file = event.target.files[0];
-      
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        throw new Error('Only image files (JPEG, PNG, GIF, WebP) are allowed.');
-      }
-      
-      // Validate file size (5MB max)
-      const MAX_FILE_SIZE = 5 * 1024 * 1024;
-      if (file.size > MAX_FILE_SIZE) {
-        throw new Error('File size must be less than 5MB.');
-      }
-      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user found");
+      if (!user) return;
 
-      const fileExt = file.type.split('/')[1] || 'jpg';
-      const filePath = `${user.id}/avatar.${fileExt}`;
-
-      // Delete old avatar if exists
-      if (profile?.avatar_url) {
-        const oldPath = profile.avatar_url.split("/").slice(-2).join("/");
-        await supabase.storage.from("avatars").remove([oldPath]);
-      }
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl })
+        .update({
+          avatar_url: data.avatarUrl,
+          avatar_seed: data.avatarSeed,
+          avatar_type: data.avatarType,
+        })
         .eq("user_id", user.id);
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
-      setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : null);
+      setProfile((prev) => prev ? {
+        ...prev,
+        avatar_url: data.avatarUrl,
+        avatar_seed: data.avatarSeed,
+        avatar_type: data.avatarType,
+      } : null);
 
       toast({
         title: "Success",
         description: "Avatar updated successfully",
       });
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      console.error("Error updating avatar:", error);
       toast({
         title: "Error",
-        description: "Failed to upload avatar",
+        description: "Failed to update avatar",
         variant: "destructive",
       });
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -187,6 +162,10 @@ export default function Profile() {
     );
   }
 
+  const displayAvatarUrl = profile?.avatar_type === 'generated' && profile?.avatar_seed
+    ? generateAvatarUrl(profile.avatar_seed)
+    : profile?.avatar_url;
+
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
@@ -194,26 +173,18 @@ export default function Profile() {
       <div className="bg-card border-2 border-border rounded-2xl p-6 shadow-md">
         <div className="flex flex-col items-center mb-6">
           <Avatar className="h-32 w-32 mb-4">
-            <AvatarImage src={profile?.avatar_url || undefined} />
+            <AvatarImage src={displayAvatarUrl || undefined} />
             <AvatarFallback>
               <User className="h-16 w-16" />
             </AvatarFallback>
           </Avatar>
 
-          <Label htmlFor="avatar-upload" className="cursor-pointer">
-            <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
-              <Upload className="h-4 w-4" />
-              {uploading ? "Uploading..." : "Change Avatar"}
-            </div>
-            <Input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarUpload}
-              disabled={uploading}
-            />
-          </Label>
+          <AvatarCustomizer
+            avatarType={(profile?.avatar_type as 'upload' | 'generated') || 'generated'}
+            avatarUrl={profile?.avatar_url || null}
+            avatarSeed={profile?.avatar_seed || null}
+            onAvatarChange={handleAvatarChange}
+          />
         </div>
 
         <div className="space-y-4">
