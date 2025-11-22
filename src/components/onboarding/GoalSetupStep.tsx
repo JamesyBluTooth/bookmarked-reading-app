@@ -23,7 +23,7 @@ export const GoalSetupStep = ({ data, onChange }: GoalSetupStepProps) => {
   };
 
   return (
-    <div className="space-y-8 animate-scale-in">
+    <div className="space-y-6 sm:space-y-8 animate-scale-in max-h-screen overflow-y-auto">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-foreground">Set Your Goal 🎯</h1>
         <p className="text-muted-foreground">Choose your daily reading target</p>
@@ -48,11 +48,11 @@ export const GoalSetupStep = ({ data, onChange }: GoalSetupStepProps) => {
         </Button>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="text-center">
-          <div className="inline-flex items-baseline gap-2 bg-primary/10 px-6 py-4 rounded-2xl">
-            <span className="text-5xl font-bold text-primary">{data.value}</span>
-            <span className="text-2xl text-muted-foreground">
+          <div className="inline-flex items-baseline gap-2 bg-primary/10 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl">
+            <span className="text-4xl sm:text-5xl font-bold text-primary">{data.value}</span>
+            <span className="text-xl sm:text-2xl text-muted-foreground">
               {data.type === "pages" ? "pages" : "minutes"}
             </span>
           </div>

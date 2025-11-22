@@ -15,8 +15,14 @@ interface OnboardingContainerProps {
 export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [containerHeight, setContainerHeight] = useState(
+    typeof window !== 'undefined' 
+      ? (window.visualViewport?.height || window.innerHeight) 
+      : 0
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
+  const touchStartTime = useRef<number>(0);
   const { toast } = useToast();
 
   const [profileData, setProfileData] = useState<{
@@ -36,32 +42,56 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
   });
 
   useEffect(() => {
+    // Update container height on viewport changes
+    const updateHeight = () => {
+      const height = window.visualViewport?.height || window.innerHeight;
+      setContainerHeight(height);
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateHeight);
+      return () => window.visualViewport.removeEventListener('resize', updateHeight);
+    }
+  }, []);
+
+  useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (e.deltaY < -50 && !isTransitioning) {
+      if (isTransitioning) return;
+      
+      if (e.deltaY < -50) {
         handleNextStep();
-      } else if (e.deltaY > 50 && !isTransitioning && currentStep > 0) {
+      } else if (e.deltaY > 50 && currentStep > 0) {
         handlePreviousStep();
       }
     };
 
     const container = containerRef.current;
     if (container) {
-      container.addEventListener("wheel", handleWheel);
+      container.addEventListener("wheel", handleWheel, { passive: true });
       return () => container.removeEventListener("wheel", handleWheel);
     }
   }, [currentStep, isTransitioning]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (isTransitioning) return;
     touchStartY.current = e.touches[0].clientY;
+    touchStartTime.current = Date.now();
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isTransitioning) return;
+    
     const touchEndY = e.changedTouches[0].clientY;
     const diff = touchStartY.current - touchEndY;
+    const duration = Date.now() - touchStartTime.current;
+    const velocity = Math.abs(diff) / duration;
 
-    if (diff < -100 && !isTransitioning) {
+    // Require minimum distance (120px) and reasonable velocity
+    if (Math.abs(diff) < 120 || velocity < 0.3) return;
+
+    if (diff < -120) {
       handleNextStep();
-    } else if (diff > 100 && !isTransitioning && currentStep > 0) {
+    } else if (diff > 120 && currentStep > 0) {
       handlePreviousStep();
     }
   };
@@ -71,7 +101,7 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
     
     setIsTransitioning(true);
     setCurrentStep((prev) => prev - 1);
-    setTimeout(() => setIsTransitioning(false), 500);
+    setTimeout(() => setIsTransitioning(false), 600);
   };
 
   const handleNextStep = async () => {
@@ -154,7 +184,7 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
     if (currentStep < 2) {
       setIsTransitioning(true);
       setCurrentStep((prev) => prev + 1);
-      setTimeout(() => setIsTransitioning(false), 500);
+      setTimeout(() => setIsTransitioning(false), 600);
     }
   };
 
@@ -209,17 +239,22 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
       className="fixed inset-0 bg-background overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      style={{ height: `${containerHeight}px` }}
     >
       <div
-        className="relative h-full transition-transform duration-500 ease-out"
+        className={`relative h-full transition-transform duration-500 ease-out ${
+          isTransitioning ? 'pointer-events-none' : ''
+        }`}
         style={{
           transform: `translateY(-${currentStep * 100}%)`,
+          willChange: 'transform',
         }}
       >
         {steps.map((step, index) => (
           <div
             key={index}
-            className="h-screen w-full flex items-center justify-center p-6"
+            className="w-full flex items-center justify-center p-6 overflow-hidden"
+            style={{ height: `${containerHeight}px` }}
           >
             <div className="w-full max-w-md animate-fade-in">
               {step}
