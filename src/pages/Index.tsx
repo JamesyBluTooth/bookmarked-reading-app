@@ -12,53 +12,59 @@ import { RightPanel } from "@/components/RightPanel";
 import { MobileNav } from "@/components/MobileNav";
 import { DailyChallenge } from "@/components/dashboard/DailyChallenge";
 import { FriendFeed } from "@/components/dashboard/FriendFeed";
-import { SplashScreen } from "@/components/SplashScreen";
 import { OnboardingContainer } from "@/components/onboarding/OnboardingContainer";
 
 const Index = () => {
   const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings">("dashboard");
 
   useEffect(() => {
-    const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("onboarding_completed")
-          .eq("user_id", session.user.id)
-          .single();
-
-        setShowOnboarding(!profile?.onboarding_completed);
-      }
-
-      setLoading(false);
-    };
-
-    initAuth();
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+    });
 
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("onboarding_completed")
-          .eq("user_id", session.user.id)
-          .single();
-
-        setShowOnboarding(!profile?.onboarding_completed);
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setShowOnboarding(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadProfile = async () => {
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (!cancelled) {
+          setShowOnboarding(!profile?.onboarding_completed);
+        }
+      } catch {
+        if (!cancelled) {
+          setShowOnboarding(false);
+        }
+      }
+    };
+
+    setTimeout(loadProfile, 0);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -66,10 +72,6 @@ const Index = () => {
 
   if (!session) {
     return <AuthPage />;
-  }
-
-  if (loading) {
-    return <SplashScreen />;
   }
 
   if (showOnboarding) {
