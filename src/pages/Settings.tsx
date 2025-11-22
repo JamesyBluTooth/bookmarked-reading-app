@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   User, Lock, BookOpen, Palette, Bell, Users, 
   Database, FileText, LogOut, Copy, Check, Shield,
@@ -16,10 +16,13 @@ import { EditProfileModal } from "@/components/settings/EditProfileModal";
 import { ChangePasswordModal } from "@/components/settings/ChangePasswordModal";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { AvatarDisplay } from "@/components/profile/AvatarDisplay";
 
 interface UserProfile {
   display_name: string | null;
   avatar_url: string | null;
+  avatar_seed: string | null;
+  avatar_type: string | null;
   friend_code: string;
   bio: string | null;
   reading_unit_preference: string;
@@ -151,12 +154,14 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={profile.avatar_url || undefined} />
-              <AvatarFallback className="text-2xl">
-                {profile.display_name?.[0]?.toUpperCase() || "?"}
-              </AvatarFallback>
-            </Avatar>
+            <AvatarDisplay
+              avatarType={profile.avatar_type}
+              avatarUrl={profile.avatar_url}
+              avatarSeed={profile.avatar_seed}
+              displayName={profile.display_name}
+              className="h-20 w-20"
+              fallbackClassName="text-2xl"
+            />
             <div className="flex-1">
               <p className="text-xl font-semibold">{profile.display_name || "Anonymous Reader"}</p>
               <p className="text-sm text-muted-foreground">{email}</p>
