@@ -53,7 +53,9 @@ export const ProfileSetupStep = ({ data, onChange }: ProfileSetupStepProps) => {
         .from("avatars")
         .getPublicUrl(filePath);
 
-      onChange({ ...data, avatarUrl: publicUrl });
+      // Add cache-busting timestamp to force image reload
+      const avatarUrlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+      onChange({ ...data, avatarUrl: avatarUrlWithTimestamp });
 
       toast({
         title: "Avatar uploaded!",
