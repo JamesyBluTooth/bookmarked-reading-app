@@ -29,6 +29,7 @@ export const BookSetupStep = ({ onBookAdded }: BookSetupStepProps) => {
           description: "No book found with that ISBN. Please check and try again.",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
@@ -59,7 +60,7 @@ export const BookSetupStep = ({ onBookAdded }: BookSetupStepProps) => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to fetch book details",
         variant: "destructive",
       });
     } finally {
@@ -113,6 +114,16 @@ export const BookSetupStep = ({ onBookAdded }: BookSetupStepProps) => {
           )}
         </Button>
       </form>
+
+      <Button
+        type="button"
+        variant="outline"
+        onClick={onBookAdded}
+        className="w-full"
+        disabled={loading}
+      >
+        Skip for now
+      </Button>
 
       <div className="text-center text-sm text-muted-foreground">
         <p>You can add more books later from your library</p>
