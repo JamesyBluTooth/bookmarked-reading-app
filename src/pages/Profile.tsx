@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, User } from "lucide-react";
+import { profileSchema } from "@/lib/validation";
 
 interface Profile {
   id: string;
@@ -139,12 +140,27 @@ export default function Profile() {
 
   const handleUpdateProfile = async () => {
     try {
+      // Validate profile data
+      const result = profileSchema.safeParse({
+        display_name: displayName,
+        bio: undefined
+      });
+
+      if (!result.success) {
+        toast({
+          title: "Validation Error",
+          description: result.error.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { error } = await supabase
         .from("profiles")
-        .update({ display_name: displayName })
+        .update({ display_name: result.data.display_name })
         .eq("user_id", user.id);
 
       if (error) throw error;
@@ -209,8 +225,12 @@ export default function Profile() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Enter your display name"
+              maxLength={50}
               className="mt-1"
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {displayName.length}/50 characters
+            </p>
           </div>
 
           <Button onClick={handleUpdateProfile} className="w-full">

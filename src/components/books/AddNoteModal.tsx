@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { noteSchema } from "@/lib/validation";
 
 interface AddNoteModalProps {
   open: boolean;
@@ -28,6 +29,12 @@ export const AddNoteModal = ({
     setLoading(true);
 
     try {
+      // Validate input
+      const result = noteSchema.safeParse({ content: note });
+      if (!result.success) {
+        throw new Error(result.error.errors[0].message);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -44,7 +51,7 @@ export const AddNoteModal = ({
         .insert({
           book_id: bookId,
           user_id: profile.user_id,
-          content: note,
+          content: result.data.content,
         });
 
       if (error) throw error;
@@ -83,9 +90,13 @@ export const AddNoteModal = ({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               required
+              maxLength={5000}
               rows={6}
               className="resize-none"
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {note.length}/5000 characters
+            </p>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Saving..." : "Save Note"}

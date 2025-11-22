@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { reviewSchema } from "@/lib/validation";
 
 interface CompleteBookModalProps {
   open: boolean;
@@ -32,6 +33,14 @@ export const CompleteBookModal = ({
     setLoading(true);
 
     try {
+      // Validate review if provided
+      if (review.trim()) {
+        const result = reviewSchema.safeParse({ review: review.trim() });
+        if (!result.success) {
+          throw new Error(result.error.errors[0].message);
+        }
+      }
+
       const { error } = await supabase
         .from("books")
         .update({
@@ -99,9 +108,13 @@ export const CompleteBookModal = ({
               placeholder="Write your review..."
               value={review}
               onChange={(e) => setReview(e.target.value)}
+              maxLength={2000}
               rows={6}
               className="resize-none"
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {review.length}/2000 characters
+            </p>
           </div>
           <div className="flex gap-2">
             <Button

@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, Loader2 } from "lucide-react";
+import { profileSchema } from "@/lib/validation";
 
 interface EditProfileModalProps {
   open: boolean;
@@ -101,14 +102,29 @@ export function EditProfileModal({
     try {
       setSaving(true);
 
+      // Validate profile data
+      const result = profileSchema.safeParse({
+        display_name: displayName,
+        bio: bio || undefined
+      });
+
+      if (!result.success) {
+        toast({
+          title: "Validation Error",
+          description: result.error.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { error } = await supabase
         .from("profiles")
         .update({
-          display_name: displayName.trim() || null,
-          bio: bio.trim() || null,
+          display_name: result.data.display_name,
+          bio: result.data.bio || null,
           avatar_url: avatarUrl,
         })
         .eq("user_id", user.id);
@@ -186,6 +202,9 @@ export function EditProfileModal({
               onChange={(e) => setDisplayName(e.target.value)}
               maxLength={50}
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {displayName.length}/50 characters
+            </p>
           </div>
 
           <div className="space-y-2">

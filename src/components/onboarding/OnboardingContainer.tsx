@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { profileSchema } from "@/lib/validation";
 
 interface OnboardingContainerProps {
   onComplete: () => void;
@@ -89,15 +90,30 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
 
     if (currentStep === 0) {
       try {
+        // Validate profile data
+        const result = profileSchema.safeParse({
+          display_name: profileData.displayName,
+          bio: profileData.bio || undefined
+        });
+
+        if (!result.success) {
+          toast({
+            title: "Validation Error",
+            description: result.error.errors[0].message,
+            variant: "destructive",
+          });
+          return;
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
         const { error } = await supabase
           .from("profiles")
           .update({
-            display_name: profileData.displayName,
+            display_name: result.data.display_name,
             avatar_url: profileData.avatarUrl,
-            bio: profileData.bio || null,
+            bio: result.data.bio || null,
           })
           .eq("user_id", user.id);
 

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { profileSchema } from "@/lib/validation";
 
 interface ProfileSetupStepProps {
   data: {
@@ -109,8 +110,12 @@ export const ProfileSetupStep = ({ data, onChange }: ProfileSetupStepProps) => {
               placeholder="Enter your username"
               value={data.displayName}
               onChange={(e) => onChange({ ...data, displayName: e.target.value })}
+              maxLength={50}
               className="transition-all focus:scale-[1.02]"
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {data.displayName.length}/50 characters
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -120,9 +125,13 @@ export const ProfileSetupStep = ({ data, onChange }: ProfileSetupStepProps) => {
               placeholder="Tell us about yourself..."
               value={data.bio}
               onChange={(e) => onChange({ ...data, bio: e.target.value })}
+              maxLength={500}
               className="resize-none transition-all focus:scale-[1.02]"
               rows={3}
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {data.bio.length}/500 characters
+            </p>
           </div>
         </div>
       </div>
