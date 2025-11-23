@@ -1,3 +1,5 @@
+import { logError } from './logger';
+
 export interface GoogleBook {
   title: string;
   authors?: string[];

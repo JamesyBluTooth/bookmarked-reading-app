@@ -146,7 +146,6 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
 
         if (error) throw error;
       } catch (error) {
-        console.error("Error saving profile:", error);
         toast({
           title: "Error",
           description: "Failed to save profile. Please try again.",
@@ -171,7 +170,6 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
 
         if (error) throw error;
       } catch (error) {
-        console.error("Error saving goal:", error);
         toast({
           title: "Error",
           description: "Failed to save goal. Please try again.",
@@ -207,7 +205,6 @@ export const OnboardingContainer = ({ onComplete }: OnboardingContainerProps) =>
 
       onComplete();
     } catch (error) {
-      console.error("Error completing onboarding:", error);
       toast({
         title: "Error",
         description: "Failed to complete onboarding. Please try again.",
