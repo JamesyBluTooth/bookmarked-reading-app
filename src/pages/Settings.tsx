@@ -17,6 +17,7 @@ import { ChangePasswordModal } from "@/components/settings/ChangePasswordModal";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { AvatarDisplay } from "@/components/profile/AvatarDisplay";
+import { ThemePreview } from "@/components/settings/ThemePreview";
 
 interface UserProfile {
   display_name: string | null;
@@ -87,6 +88,11 @@ export default function Settings() {
       if (error) throw error;
 
       setProfile((prev) => prev ? { ...prev, [field]: value } : null);
+      
+      // Apply theme immediately if theme_preference was updated
+      if (field === "theme_preference") {
+        applyTheme(value);
+      }
     } catch (error) {
       console.error("Error updating preference:", error);
       toast({
@@ -95,6 +101,19 @@ export default function Settings() {
         variant: "destructive",
       });
     }
+  };
+
+  const applyTheme = (theme: string) => {
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove('light', 'dark', 'bookish');
+      
+      if (theme === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.add(isDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.classList.add(theme);
+      }
+    });
   };
 
   const copyFriendCode = () => {
@@ -302,28 +321,57 @@ export default function Settings() {
           <CardDescription>Customise how Bookmarked looks</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Label className="text-base font-semibold">Theme</Label>
             <RadioGroup
               value={profile.theme_preference}
               onValueChange={(value) => updatePreference("theme_preference", value)}
+              className="grid gap-4"
             >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="system" id="system" />
-                <Label htmlFor="system">System Default</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="light" id="light" />
-                <Label htmlFor="light">Light</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="dark" id="dark" />
-                <Label htmlFor="dark">Dark</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="bookish" id="bookish" />
-                <Label htmlFor="bookish">Bookish (cosy sepia tones)</Label>
-              </div>
+              <ThemePreview
+                value="system"
+                label="System Default"
+                description="Automatically match your device's theme"
+                colors={{
+                  background: "hsl(0 0% 100%)",
+                  foreground: "hsl(240 10% 3.9%)",
+                  primary: "hsl(243 75% 59%)",
+                  card: "hsl(0 0% 100%)"
+                }}
+              />
+              <ThemePreview
+                value="light"
+                label="Light"
+                description="Bright and clean"
+                colors={{
+                  background: "hsl(0 0% 100%)",
+                  foreground: "hsl(240 10% 3.9%)",
+                  primary: "hsl(243 75% 59%)",
+                  card: "hsl(0 0% 100%)"
+                }}
+              />
+              <ThemePreview
+                value="dark"
+                label="Dark"
+                description="Easy on the eyes"
+                colors={{
+                  background: "hsl(240 10% 3.9%)",
+                  foreground: "hsl(0 0% 98%)",
+                  primary: "hsl(243 75% 59%)",
+                  card: "hsl(240 3.7% 15.9%)"
+                }}
+              />
+              <ThemePreview
+                value="bookish"
+                label="Bookish"
+                description="Cosy sepia tones for long reading sessions"
+                colors={{
+                  background: "hsl(45 30% 92%)",
+                  foreground: "hsl(30 25% 20%)",
+                  primary: "hsl(25 75% 47%)",
+                  card: "hsl(40 35% 96%)"
+                }}
+              />
             </RadioGroup>
           </div>
 

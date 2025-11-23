@@ -86,14 +86,17 @@ const Index = () => {
   }, []);
 
   const applyTheme = (theme: string) => {
-    document.documentElement.classList.remove('light', 'dark', 'bookish');
-    
-    if (theme === 'system') {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.add(isDark ? 'dark' : 'light');
-    } else {
-      document.documentElement.classList.add(theme);
-    }
+    // Add a small delay to ensure smooth transition
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove('light', 'dark', 'bookish');
+      
+      if (theme === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.add(isDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.classList.add(theme);
+      }
+    });
   };
 
   const handleSignOut = async () => {
