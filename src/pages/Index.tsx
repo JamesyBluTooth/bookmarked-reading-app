@@ -128,7 +128,7 @@ const Index = () => {
         {/* Mobile: Show right panel content below main content */}
         <div className="lg:hidden container mx-auto px-4 pb-6 space-y-4">
           <DailyChallenge />
-          <FriendFeed />
+          {activeTab === "social" && <FriendFeed />}
         </div>
       </main>
 
