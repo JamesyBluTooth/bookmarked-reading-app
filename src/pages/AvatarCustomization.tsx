@@ -44,14 +44,23 @@ export default function AvatarCustomization() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("avatar_seed, avatar_type")
+      const { data: customization } = await supabase
+        .from("avatar_customizations")
+        .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (profile?.avatar_seed && profile?.avatar_type === 'generated') {
-        setSeed(profile.avatar_seed);
+      if (customization) {
+        setBackgroundColor(customization.background_color);
+        setSkinColor(customization.skin_color);
+        setSelectedEyes(customization.eyes);
+        setSelectedHair(customization.hair);
+        setHairColor(customization.hair_color);
+        setSelectedFacialHair(customization.facial_hair);
+        setSelectedBody(customization.body);
+        setClothingColor(customization.clothing_color);
+        setSelectedMouth(customization.mouth);
+        setSelectedNose(customization.nose);
       }
     } catch (error) {
       console.error("Error loading avatar:", error);
@@ -68,7 +77,27 @@ export default function AvatarCustomization() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
+      // Save avatar customization details
+      const { error: customizationError } = await supabase
+        .from("avatar_customizations")
+        .upsert({
+          user_id: user.id,
+          background_color: backgroundColor,
+          skin_color: skinColor || 'f9c9b6',
+          eyes: selectedEyes || 'happy',
+          hair: selectedHair || 'short01',
+          hair_color: hairColor || '0e0e0e',
+          facial_hair: selectedFacialHair || 'none',
+          body: selectedBody || 'checkered01',
+          clothing_color: clothingColor || '262e33',
+          mouth: selectedMouth || 'happy01',
+          nose: selectedNose || 'smallRound',
+        });
+
+      if (customizationError) throw customizationError;
+
+      // Update profile to indicate generated avatar
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({
           avatar_seed: seed,
@@ -77,7 +106,7 @@ export default function AvatarCustomization() {
         })
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
       toast({
         title: "Avatar saved!",

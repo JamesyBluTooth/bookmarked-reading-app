@@ -20,6 +20,7 @@ import { AvatarDisplay } from "@/components/profile/AvatarDisplay";
 import { ThemePreview } from "@/components/settings/ThemePreview";
 
 interface UserProfile {
+  user_id: string;
   display_name: string | null;
   avatar_url: string | null;
   avatar_seed: string | null;
@@ -178,6 +179,7 @@ export default function Settings() {
               avatarUrl={profile.avatar_url}
               avatarSeed={profile.avatar_seed}
               displayName={profile.display_name}
+              userId={profile.user_id}
               className="h-20 w-20"
               fallbackClassName="text-2xl"
             />

@@ -46,6 +46,57 @@ export type Database = {
           },
         ]
       }
+      avatar_customizations: {
+        Row: {
+          background_color: string
+          body: string
+          clothing_color: string
+          created_at: string
+          eyes: string
+          facial_hair: string
+          hair: string
+          hair_color: string
+          id: string
+          mouth: string
+          nose: string
+          skin_color: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          background_color: string
+          body: string
+          clothing_color: string
+          created_at?: string
+          eyes: string
+          facial_hair: string
+          hair: string
+          hair_color: string
+          id?: string
+          mouth: string
+          nose: string
+          skin_color: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          background_color?: string
+          body?: string
+          clothing_color?: string
+          created_at?: string
+          eyes?: string
+          facial_hair?: string
+          hair?: string
+          hair_color?: string
+          id?: string
+          mouth?: string
+          nose?: string
+          skin_color?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           author: string | null

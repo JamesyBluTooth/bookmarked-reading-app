@@ -147,6 +147,7 @@ export default function Profile() {
                 avatarUrl={profile?.avatar_url}
                 avatarSeed={profile?.avatar_seed}
                 displayName={profile?.display_name}
+                userId={profile?.user_id}
                 className="h-32 w-32"
               />
               <button
