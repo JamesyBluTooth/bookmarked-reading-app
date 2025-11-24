@@ -4,9 +4,9 @@ import { AuthPage } from "@/components/auth/AuthPage";
 import { Dashboard } from "./Dashboard";
 import { Books } from "./Books";
 import Profile from "./Profile";
-import ChallengeHistory from "./ChallengeHistory";
 import { Social } from "./Social";
 import Settings from "./Settings";
+import Clubs from "./Clubs";
 import { Sidebar } from "@/components/Sidebar";
 import { RightPanel } from "@/components/RightPanel";
 import { MobileNav } from "@/components/MobileNav";
@@ -17,7 +17,7 @@ import { OnboardingContainer } from "@/components/onboarding/OnboardingContainer
 const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "clubs" | "social" | "settings">("dashboard");
 
   useEffect(() => {
     const {
@@ -119,7 +119,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-6 lg:py-8 max-w-6xl">
           {activeTab === "dashboard" && <Dashboard />}
           {activeTab === "books" && <Books />}
-          {activeTab === "challenge-history" && <ChallengeHistory />}
+          {activeTab === "clubs" && <Clubs />}
           {activeTab === "social" && <Social />}
           {activeTab === "profile" && <Profile />}
           {activeTab === "settings" && <Settings />}
