@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   User, Lock, BookOpen, Palette, Bell, Users, 
   Database, FileText, LogOut, Copy, Check, Shield,
-  Settings as SettingsIcon, ArrowLeft
+  Settings as SettingsIcon
 } from "lucide-react";
 import { EditProfileModal } from "@/components/settings/EditProfileModal";
 import { ChangePasswordModal } from "@/components/settings/ChangePasswordModal";
@@ -18,9 +18,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { AvatarDisplay } from "@/components/profile/AvatarDisplay";
 import { ThemePreview } from "@/components/settings/ThemePreview";
-import { Sidebar } from "@/components/Sidebar";
-import { RightPanel } from "@/components/RightPanel";
-import { MobileNav } from "@/components/MobileNav";
 
 interface UserProfile {
   user_id: string;
@@ -43,7 +40,6 @@ interface UserProfile {
 }
 
 export default function Settings() {
-  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
@@ -161,27 +157,11 @@ export default function Settings() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      <Sidebar 
-        activeTab="settings" 
-        onTabChange={(tab) => navigate('/')} 
-        onSignOut={handleSignOut}
-      />
-      
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
-          <div className="flex items-center gap-3 mb-8">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/')}
-              className="mr-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <SettingsIcon className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold">Settings</h1>
-          </div>
+    <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
+      <div className="flex items-center gap-3 mb-8">
+        <SettingsIcon className="h-8 w-8 text-primary" />
+        <h1 className="text-4xl font-bold">Settings</h1>
+      </div>
 
       {/* Account Section */}
       <Card>
@@ -562,26 +542,16 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-          <EditProfileModal
-            open={editProfileOpen}
-            onOpenChange={setEditProfileOpen}
-            profile={profile}
-            onProfileUpdate={loadProfile}
-          />
+      <EditProfileModal
+        open={editProfileOpen}
+        onOpenChange={setEditProfileOpen}
+        profile={profile}
+        onProfileUpdate={loadProfile}
+      />
 
-          <ChangePasswordModal
-            open={changePasswordOpen}
-            onOpenChange={setChangePasswordOpen}
-          />
-        </div>
-      </main>
-
-      <RightPanel />
-      
-      <MobileNav 
-        activeTab="settings" 
-        onTabChange={(tab) => navigate('/')}
-        onSignOut={handleSignOut}
+      <ChangePasswordModal
+        open={changePasswordOpen}
+        onOpenChange={setChangePasswordOpen}
       />
     </div>
   );
