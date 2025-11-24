@@ -42,6 +42,12 @@ All colors MUST be HSL.
     --input: 240 5.9% 90%;
     --ring: 243 75% 59%;
 
+    --chart-1: 221 83% 53%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 31 80% 60%;
+    --chart-5: 340 75% 55%;
+
     --radius: 1rem;
 
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -83,6 +89,12 @@ All colors MUST be HSL.
     --border: 240 3.7% 20%;
     --input: 240 3.7% 20%;
     --ring: 243 75% 59%;
+
+    --chart-1: 221 83% 53%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 31 80% 60%;
+    --chart-5: 340 75% 55%;
   }
 
   .bookish {
@@ -119,6 +131,12 @@ All colors MUST be HSL.
     --border: 35 20% 80%;
     --input: 35 20% 80%;
     --ring: 25 75% 47%;
+
+    --chart-1: 25 75% 47%;
+    --chart-2: 142 50% 45%;
+    --chart-3: 35 55% 60%;
+    --chart-4: 45 93% 47%;
+    --chart-5: 0 70% 50%;
   }
 }
 
