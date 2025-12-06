@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.reading_stats (
 ALTER TABLE public.reading_stats ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for reading_stats
+-- RLS Policies for reading_stats
 CREATE POLICY "Users can view their own reading stats"
   ON public.reading_stats FOR SELECT
   USING (user_id = (SELECT user_id FROM public.profiles WHERE user_id = auth.uid()));
