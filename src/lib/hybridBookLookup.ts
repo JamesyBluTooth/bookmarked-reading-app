@@ -21,15 +21,7 @@ export interface CanonicalBook {
   community_edited: boolean;
 }
 
-interface CacheEntry {
-  response: any;
-  expires_at: string;
-}
-
 const CACHE_DURATION_HOURS = 24 * 7; // 7 days
-
-// Required fields for a "complete" book record
-const REQUIRED_FIELDS = ['title', 'authors', 'page_count', 'cover_url'] as const;
 
 function calculateMissingFields(book: Partial<CanonicalBook>): string[] {
   const missing: string[] = [];
@@ -56,23 +48,39 @@ export function getDataCompletenessScore(missingFields: string[]): { score: numb
   return { score, label: 'Incomplete', color: 'text-orange-500' };
 }
 
+interface CacheRow {
+  google_response: any | null;
+  openlib_response: any | null;
+  google_cached_at: string | null;
+  openlib_cached_at: string | null;
+}
+
 async function getCachedResponse(isbn: string, source: 'google' | 'openlib'): Promise<any | null> {
   try {
     const { data, error } = await supabase
       .from('book_api_cache')
-      .select('response, expires_at')
+      .select('google_response, openlib_response, google_cached_at, openlib_cached_at')
       .eq('isbn', isbn)
-      .eq('source', source)
       .single();
 
     if (error || !data) return null;
 
-    // Check if cache is still valid
-    if (new Date(data.expires_at) < new Date()) {
-      return null;
-    }
+    const cacheData = data as CacheRow;
+    const now = new Date();
+    const cacheExpiry = new Date();
+    cacheExpiry.setHours(cacheExpiry.getHours() - CACHE_DURATION_HOURS);
 
-    return data.response;
+    if (source === 'google') {
+      if (!cacheData.google_cached_at || new Date(cacheData.google_cached_at) < cacheExpiry) {
+        return null;
+      }
+      return cacheData.google_response;
+    } else {
+      if (!cacheData.openlib_cached_at || new Date(cacheData.openlib_cached_at) < cacheExpiry) {
+        return null;
+      }
+      return cacheData.openlib_response;
+    }
   } catch {
     return null;
   }
@@ -80,19 +88,28 @@ async function getCachedResponse(isbn: string, source: 'google' | 'openlib'): Pr
 
 async function setCachedResponse(isbn: string, source: 'google' | 'openlib', response: any): Promise<void> {
   try {
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + CACHE_DURATION_HOURS);
+    const now = new Date().toISOString();
+    const updateData = source === 'google' 
+      ? { google_response: response, google_cached_at: now }
+      : { openlib_response: response, openlib_cached_at: now };
 
-    await supabase
+    // Try to update existing row first
+    const { data: existing } = await supabase
       .from('book_api_cache')
-      .upsert({
-        isbn,
-        source,
-        response,
-        expires_at: expiresAt.toISOString(),
-      }, {
-        onConflict: 'isbn,source'
-      });
+      .select('id')
+      .eq('isbn', isbn)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from('book_api_cache')
+        .update(updateData)
+        .eq('isbn', isbn);
+    } else {
+      await supabase
+        .from('book_api_cache')
+        .insert({ isbn, ...updateData });
+    }
   } catch (error) {
     logError(error, 'Failed to cache API response');
   }

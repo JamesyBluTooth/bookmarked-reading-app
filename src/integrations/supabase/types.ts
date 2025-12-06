@@ -100,27 +100,33 @@ export type Database = {
       book_api_cache: {
         Row: {
           created_at: string
-          expires_at: string
+          google_cached_at: string | null
+          google_response: Json | null
           id: string
           isbn: string
-          response: Json
-          source: string
+          openlib_cached_at: string | null
+          openlib_response: Json | null
+          updated_at: string
         }
         Insert: {
           created_at?: string
-          expires_at: string
+          google_cached_at?: string | null
+          google_response?: Json | null
           id?: string
           isbn: string
-          response: Json
-          source: string
+          openlib_cached_at?: string | null
+          openlib_response?: Json | null
+          updated_at?: string
         }
         Update: {
           created_at?: string
-          expires_at?: string
+          google_cached_at?: string | null
+          google_response?: Json | null
           id?: string
           isbn?: string
-          response?: Json
-          source?: string
+          openlib_cached_at?: string | null
+          openlib_response?: Json | null
+          updated_at?: string
         }
         Relationships: []
       }
