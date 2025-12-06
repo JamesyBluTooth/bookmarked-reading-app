@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, BookOpen } from "lucide-react";
-import { fetchBookByISBN } from "@/lib/googleBooks";
+import { Search, BookOpen, AlertTriangle } from "lucide-react";
+import { lookupBookByISBN, CanonicalBook } from "@/lib/hybridBookLookup";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DataCompletenessIndicator } from "@/components/books/DataCompletenessIndicator";
 
 interface BookSetupStepProps {
   onBookAdded: () => void;
@@ -14,59 +15,86 @@ interface BookSetupStepProps {
 export const BookSetupStep = ({ onBookAdded }: BookSetupStepProps) => {
   const [isbn, setIsbn] = useState("");
   const [loading, setLoading] = useState(false);
+  const [previewBook, setPreviewBook] = useState<CanonicalBook | null>(null);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async () => {
+    if (!isbn.trim()) return;
+    
     setLoading(true);
+    setPreviewBook(null);
 
     try {
-      const bookData = await fetchBookByISBN(isbn);
-
+      const bookData = await lookupBookByISBN(isbn);
+      
       if (!bookData) {
         toast({
           title: "Book not found",
           description: "No book found with that ISBN. Please check and try again.",
           variant: "destructive",
         });
-        setLoading(false);
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
+      setPreviewBook(bookData);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleAddBook = async () => {
+    if (!previewBook) return;
+    
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       if (!user) {
         throw new Error("User not authenticated");
       }
 
-      const totalPages = (bookData.pageCount && bookData.pageCount > 0) ? bookData.pageCount : null;
-
       const { error } = await supabase.from("books").insert({
         user_id: user.id,
-        isbn: isbn,
-        title: bookData.title,
-        author: bookData.authors?.join(", "),
-        genres: bookData.categories || [],
-        cover_url: bookData.imageLinks?.thumbnail?.replace("http:", "https:"),
-        total_pages: totalPages,
+        isbn: previewBook.isbn,
+        title: previewBook.title,
+        author: previewBook.authors,
+        genres: previewBook.categories || [],
+        cover_url: previewBook.cover_url,
+        total_pages: previewBook.page_count,
       });
 
       if (error) throw error;
 
       toast({
-        title: "Book added! 📚",
-        description: `${bookData.title} has been added to your collection.`,
+        title: "Book added!",
+        description: `${previewBook.title} has been added to your collection.`,
       });
 
       onBookAdded();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to fetch book details",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (previewBook) {
+      await handleAddBook();
+    } else {
+      await handleSearch();
     }
   };
 
@@ -78,43 +106,99 @@ export const BookSetupStep = ({ onBookAdded }: BookSetupStepProps) => {
             <BookOpen className="w-10 h-10 text-primary" />
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-foreground">Choose Your First Book 📖</h1>
+        <h1 className="text-3xl font-bold text-foreground">Choose Your First Book</h1>
         <p className="text-muted-foreground">Start your reading journey</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="isbn">Enter ISBN</Label>
-          <Input
-            id="isbn"
-            placeholder="e.g., 9780545010221"
-            value={isbn}
-            onChange={(e) => setIsbn(e.target.value)}
-            required
-            className="transition-all focus:scale-[1.02]"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="isbn"
+              placeholder="e.g., 9780545010221"
+              value={isbn}
+              onChange={(e) => {
+                setIsbn(e.target.value);
+                if (previewBook) setPreviewBook(null);
+              }}
+              required
+              disabled={loading}
+              className="transition-all focus:scale-[1.02]"
+            />
+            {!previewBook && (
+              <Button type="submit" disabled={loading || !isbn.trim()}>
+                <Search className="w-4 h-4 mr-2" />
+                {loading ? "..." : "Search"}
+              </Button>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             Find the ISBN on the back cover of your book
           </p>
         </div>
 
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full h-12 text-lg transition-all hover:scale-[1.02]"
-        >
-          {loading ? (
-            <>
-              <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
-              Searching...
-            </>
-          ) : (
-            <>
-              <Search className="w-5 h-5 mr-2" />
-              Add Book
-            </>
-          )}
-        </Button>
+        {previewBook && (
+          <div className="rounded-lg border bg-card p-4 space-y-4">
+            <div className="flex gap-4">
+              {previewBook.cover_url ? (
+                <img
+                  src={previewBook.cover_url}
+                  alt={previewBook.title}
+                  className="w-20 h-28 object-cover rounded shadow-sm"
+                />
+              ) : (
+                <div className="w-20 h-28 bg-muted rounded flex items-center justify-center">
+                  <span className="text-xs text-muted-foreground text-center px-1">No cover</span>
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold">{previewBook.title}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {previewBook.authors || "Unknown author"}
+                </p>
+                {previewBook.page_count && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {previewBook.page_count} pages
+                  </p>
+                )}
+                
+                <div className="mt-2">
+                  <DataCompletenessIndicator 
+                    missingFields={previewBook.missing_fields} 
+                  />
+                </div>
+
+                {previewBook.missing_fields.length > 0 && (
+                  <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    <span>Some details missing - you can add them later</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                type="submit" 
+                className="flex-1 h-12" 
+                disabled={loading}
+              >
+                {loading ? "Adding..." : "Add to Collection"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setPreviewBook(null);
+                  setIsbn("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
       </form>
 
       <Button

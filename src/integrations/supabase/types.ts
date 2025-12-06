@@ -97,6 +97,80 @@ export type Database = {
         }
         Relationships: []
       }
+      book_api_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          isbn: string
+          response: Json
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          isbn: string
+          response: Json
+          source: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          isbn?: string
+          response?: Json
+          source?: string
+        }
+        Relationships: []
+      }
+      book_clubs: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          invite_code: string
+          is_private: boolean | null
+          max_members: number | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          invite_code: string
+          is_private?: boolean | null
+          max_members?: number | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          invite_code?: string
+          is_private?: boolean | null
+          max_members?: number | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_clubs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       books: {
         Row: {
           author: string | null
@@ -161,6 +235,500 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "books_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      canonical_books: {
+        Row: {
+          authors: string | null
+          categories: string[] | null
+          community_edited: boolean | null
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          google_books_id: string | null
+          id: string
+          isbn: string | null
+          last_edited_by: string | null
+          missing_fields: string[] | null
+          open_library_key: string | null
+          page_count: number | null
+          published_date: string | null
+          source_google: boolean | null
+          source_open_library: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          authors?: string | null
+          categories?: string[] | null
+          community_edited?: boolean | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          google_books_id?: string | null
+          id?: string
+          isbn?: string | null
+          last_edited_by?: string | null
+          missing_fields?: string[] | null
+          open_library_key?: string | null
+          page_count?: number | null
+          published_date?: string | null
+          source_google?: boolean | null
+          source_open_library?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          authors?: string | null
+          categories?: string[] | null
+          community_edited?: boolean | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          google_books_id?: string | null
+          id?: string
+          isbn?: string | null
+          last_edited_by?: string | null
+          missing_fields?: string[] | null
+          open_library_key?: string | null
+          page_count?: number | null
+          published_date?: string | null
+          source_google?: boolean | null
+          source_open_library?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      club_achievements: {
+        Row: {
+          achievement_type: Database["public"]["Enums"]["club_achievement_type"]
+          club_id: string
+          earned_at: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          achievement_type: Database["public"]["Enums"]["club_achievement_type"]
+          club_id: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          achievement_type?: Database["public"]["Enums"]["club_achievement_type"]
+          club_id?: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_achievements_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "book_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      club_books: {
+        Row: {
+          assigned_by: string
+          book_author: string | null
+          book_cover_url: string | null
+          book_title: string
+          club_id: string
+          created_at: string
+          end_date: string
+          google_books_id: string | null
+          id: string
+          isbn: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["club_book_status"]
+          total_pages: number | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_by: string
+          book_author?: string | null
+          book_cover_url?: string | null
+          book_title: string
+          club_id: string
+          created_at?: string
+          end_date: string
+          google_books_id?: string | null
+          id?: string
+          isbn?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["club_book_status"]
+          total_pages?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string
+          book_author?: string | null
+          book_cover_url?: string | null
+          book_title?: string
+          club_id?: string
+          created_at?: string
+          end_date?: string
+          google_books_id?: string | null
+          id?: string
+          isbn?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["club_book_status"]
+          total_pages?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_books_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "club_books_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "book_clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_discussions: {
+        Row: {
+          club_book_id: string | null
+          club_id: string
+          content: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_spoiler: boolean | null
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          club_book_id?: string | null
+          club_id: string
+          content: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_spoiler?: boolean | null
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          club_book_id?: string | null
+          club_id?: string
+          content?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_spoiler?: boolean | null
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_discussions_club_book_id_fkey"
+            columns: ["club_book_id"]
+            isOneToOne: false
+            referencedRelation: "club_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_discussions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "book_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_discussions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "club_discussions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_discussions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      club_events: {
+        Row: {
+          club_book_id: string | null
+          club_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          event_date: string
+          event_type: Database["public"]["Enums"]["club_event_type"]
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          club_book_id?: string | null
+          club_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          event_date: string
+          event_type: Database["public"]["Enums"]["club_event_type"]
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          club_book_id?: string | null
+          club_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          event_date?: string
+          event_type?: Database["public"]["Enums"]["club_event_type"]
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_events_club_book_id_fkey"
+            columns: ["club_book_id"]
+            isOneToOne: false
+            referencedRelation: "club_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "book_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      club_invites: {
+        Row: {
+          club_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          invite_email: string | null
+          invited_by: string
+          invited_user_id: string | null
+          responded_at: string | null
+          status: Database["public"]["Enums"]["club_invite_status"] | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          invite_email?: string | null
+          invited_by: string
+          invited_user_id?: string | null
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["club_invite_status"] | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invite_email?: string | null
+          invited_by?: string
+          invited_user_id?: string | null
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["club_invite_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_invites_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "book_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "club_invites_invited_user_id_fkey"
+            columns: ["invited_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      club_members: {
+        Row: {
+          club_id: string
+          id: string
+          is_active: boolean | null
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "book_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      club_reading_progress: {
+        Row: {
+          club_book_id: string
+          completed_at: string | null
+          current_page: number | null
+          id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["club_reading_status"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          club_book_id: string
+          completed_at?: string | null
+          current_page?: number | null
+          id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["club_reading_status"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          club_book_id?: string
+          completed_at?: string | null
+          current_page?: number | null
+          id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["club_reading_status"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_reading_progress_club_book_id_fkey"
+            columns: ["club_book_id"]
+            isOneToOne: false
+            referencedRelation: "club_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_reading_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      club_roles: {
+        Row: {
+          club_id: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["club_role_type"]
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["club_role_type"]
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["club_role_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_roles_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "book_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_roles_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "club_roles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -507,11 +1075,40 @@ export type Database = {
         Returns: string
       }
       ensure_reading_stats_for_week: { Args: never; Returns: undefined }
+      generate_club_invite_code: { Args: never; Returns: string }
       generate_daily_challenge: { Args: { p_user_id: string }; Returns: string }
       generate_friend_code: { Args: never; Returns: string }
+      get_club_role_level: {
+        Args: { _club_id: string; _user_id: string }
+        Returns: number
+      }
+      has_club_role: {
+        Args: {
+          _club_id: string
+          _role: Database["public"]["Enums"]["club_role_type"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_club_member: {
+        Args: { _club_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      club_achievement_type:
+        | "first_book"
+        | "five_books"
+        | "ten_books"
+        | "discussion_starter"
+        | "fast_reader"
+        | "consistent_reader"
+        | "club_founder"
+      club_book_status: "upcoming" | "active" | "completed" | "archived"
+      club_event_type: "discussion" | "deadline" | "meetup" | "other"
+      club_invite_status: "pending" | "accepted" | "declined" | "expired"
+      club_reading_status: "not_started" | "reading" | "completed" | "dropped"
+      club_role_type: "owner" | "admin" | "moderator" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -638,6 +1235,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      club_achievement_type: [
+        "first_book",
+        "five_books",
+        "ten_books",
+        "discussion_starter",
+        "fast_reader",
+        "consistent_reader",
+        "club_founder",
+      ],
+      club_book_status: ["upcoming", "active", "completed", "archived"],
+      club_event_type: ["discussion", "deadline", "meetup", "other"],
+      club_invite_status: ["pending", "accepted", "declined", "expired"],
+      club_reading_status: ["not_started", "reading", "completed", "dropped"],
+      club_role_type: ["owner", "admin", "moderator", "member"],
+    },
   },
 } as const
