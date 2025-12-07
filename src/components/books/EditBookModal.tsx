@@ -3,15 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Send } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { LocalBookOverride, setLocalBookOverride, getLocalBookOverride } from "@/lib/localBookCache";
-import { SubmitCorrectionDialog } from "./SubmitCorrectionDialog";
 
 interface EditBookModalProps {
   bookId: string;
-  isbn?: string;
   currentData: {
     title: string;
     author?: string;
@@ -25,7 +22,6 @@ interface EditBookModalProps {
 
 export const EditBookModal = ({
   bookId,
-  isbn,
   currentData,
   open,
   onOpenChange,
@@ -37,7 +33,6 @@ export const EditBookModal = ({
     total_pages: currentData.total_pages?.toString() || "",
     genres: currentData.genres?.join(", ") || "",
   });
-  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -84,130 +79,75 @@ export const EditBookModal = ({
     onOpenChange(false);
   };
 
-  const getProposedChanges = () => {
-    const genresArray = formData.genres.split(",").map(g => g.trim()).filter(g => g);
-    return {
-      title: formData.title,
-      author: formData.author || undefined,
-      total_pages: formData.total_pages ? parseInt(formData.total_pages) : undefined,
-      genres: genresArray.length > 0 ? genresArray : undefined,
-    };
-  };
-
-  const hasChanges = () => {
-    const genresArray = formData.genres.split(",").map(g => g.trim()).filter(g => g);
-    return (
-      formData.title !== currentData.title ||
-      formData.author !== (currentData.author || "") ||
-      (formData.total_pages && parseInt(formData.total_pages) !== (currentData.total_pages || 0)) ||
-      JSON.stringify(genresArray) !== JSON.stringify(currentData.genres || [])
-    );
-  };
-
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Book Details</DialogTitle>
-            <DialogDescription>
-              Local corrections for incomplete data
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Book Details</DialogTitle>
+          <DialogDescription>
+            Local corrections for incomplete data
+          </DialogDescription>
+        </DialogHeader>
 
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              These changes only affect how the book displays on your device. They won't be saved to the database and are useful when Google Books is missing information.
-            </AlertDescription>
-          </Alert>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            These changes only affect how the book displays on your device. They won't be saved to the database and are useful when Google Books is missing information.
+          </AlertDescription>
+        </Alert>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Book title"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="author">Author</Label>
-              <Input
-                id="author"
-                value={formData.author}
-                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                placeholder="Author name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="pages">Total Pages</Label>
-              <Input
-                id="pages"
-                type="number"
-                value={formData.total_pages}
-                onChange={(e) => setFormData({ ...formData, total_pages: e.target.value })}
-                placeholder="Number of pages"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="genres">Genres (comma-separated)</Label>
-              <Input
-                id="genres"
-                value={formData.genres}
-                onChange={(e) => setFormData({ ...formData, genres: e.target.value })}
-                placeholder="Fiction, Mystery, Thriller"
-              />
-            </div>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Book title"
+            />
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              Save Locally
-            </Button>
+          <div className="space-y-2">
+            <Label htmlFor="author">Author</Label>
+            <Input
+              id="author"
+              value={formData.author}
+              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+              placeholder="Author name"
+            />
           </div>
 
-          {isbn && hasChanges() && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Want to help improve data for all users?
-                </p>
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => setShowSubmitDialog(true)}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit for Missing Details
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+          <div className="space-y-2">
+            <Label htmlFor="pages">Total Pages</Label>
+            <Input
+              id="pages"
+              type="number"
+              value={formData.total_pages}
+              onChange={(e) => setFormData({ ...formData, total_pages: e.target.value })}
+              placeholder="Number of pages"
+            />
+          </div>
 
-      {isbn && (
-        <SubmitCorrectionDialog
-          open={showSubmitDialog}
-          onOpenChange={setShowSubmitDialog}
-          bookId={bookId}
-          isbn={isbn}
-          originalData={currentData}
-          proposedChanges={getProposedChanges()}
-          onSuccess={() => {
-            handleSave();
-          }}
-        />
-      )}
-    </>
+          <div className="space-y-2">
+            <Label htmlFor="genres">Genres (comma-separated)</Label>
+            <Input
+              id="genres"
+              value={formData.genres}
+              onChange={(e) => setFormData({ ...formData, genres: e.target.value })}
+              placeholder="Fiction, Mystery, Thriller"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            Save Changes
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

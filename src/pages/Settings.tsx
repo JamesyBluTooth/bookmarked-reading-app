@@ -6,11 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { 
   User, Lock, BookOpen, Palette, Bell, Users, 
-  Database, FileText, LogOut, Copy, Check,
+  Database, FileText, LogOut, Copy, Check, Shield,
   Settings as SettingsIcon
 } from "lucide-react";
 import { EditProfileModal } from "@/components/settings/EditProfileModal";
@@ -41,13 +40,13 @@ interface UserProfile {
 }
 
 export default function Settings() {
-  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const { toast } = useToast();
+
   useEffect(() => {
     loadProfile();
   }, []);
