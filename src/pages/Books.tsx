@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AddBookForm } from "@/components/books/AddBookForm";
 import { BookCard } from "@/components/books/BookCard";
-import { BookDetail } from "@/components/books/BookDetail";
 import { BookMarked } from "lucide-react";
 
 interface Book {
@@ -17,8 +17,8 @@ interface Book {
 
 export const Books = () => {
   const [books, setBooks] = useState<Book[]>([]);
-  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchBooks();
@@ -45,6 +45,10 @@ export const Books = () => {
       setBooks(data || []);
     }
     setLoading(false);
+  };
+
+  const handleBookClick = (bookId: string) => {
+    navigate(`/book/${bookId}`);
   };
 
   return (
@@ -76,22 +80,13 @@ export const Books = () => {
                     currentPage={book.current_page}
                     totalPages={book.total_pages}
                     isCompleted={book.is_completed}
-                    onClick={() => setSelectedBookId(book.id)}
+                    onClick={() => handleBookClick(book.id)}
                   />
                 ))}
               </div>
             )}
           </div>
         </div>
-
-      {selectedBookId && (
-        <BookDetail
-          bookId={selectedBookId}
-          open={!!selectedBookId}
-          onOpenChange={(open) => !open && setSelectedBookId(null)}
-          onUpdate={fetchBooks}
-        />
-      )}
     </div>
   );
 };

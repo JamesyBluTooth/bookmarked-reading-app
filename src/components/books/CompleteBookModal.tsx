@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Star } from "lucide-react";
+import { Star, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { reviewSchema } from "@/lib/validation";
+
+const COMPLETION_BONUS_XP = 200;
 
 interface CompleteBookModalProps {
   open: boolean;
@@ -41,6 +43,9 @@ export const CompleteBookModal = ({
         }
       }
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       // Use totalPages if available, otherwise mark complete without page tracking
       const completedPage = (totalPages && totalPages > 0) ? totalPages : null;
 
@@ -51,14 +56,21 @@ export const CompleteBookModal = ({
           current_page: completedPage,
           rating: rating > 0 ? rating : null,
           review: review.trim() || null,
+          completed_at: new Date().toISOString(),
         })
         .eq("id", bookId);
 
       if (error) throw error;
 
+      // Award completion bonus XP
+      await supabase.rpc("award_xp", { 
+        p_user_id: user.id, 
+        p_xp_amount: COMPLETION_BONUS_XP 
+      });
+
       toast({
-        title: "Book completed!",
-        description: "Congratulations on finishing this book!",
+        title: "🎉 Book completed!",
+        description: `Congratulations! You earned +${COMPLETION_BONUS_XP} XP completion bonus!`,
       });
 
       setRating(0);
@@ -83,6 +95,14 @@ export const CompleteBookModal = ({
           <DialogTitle>Complete Book</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* XP Bonus Preview */}
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 text-sm">
+            <Sparkles className="w-5 h-5 text-warning" />
+            <span>
+              You'll earn <span className="font-semibold text-warning">+{COMPLETION_BONUS_XP} XP</span> completion bonus!
+            </span>
+          </div>
+
           <div className="space-y-2">
             <Label>Rating (optional)</Label>
             <div className="flex gap-2">
@@ -96,7 +116,7 @@ export const CompleteBookModal = ({
                   <Star
                     className={`w-8 h-8 ${
                       star <= rating
-                        ? "fill-primary text-primary"
+                        ? "fill-warning text-warning"
                         : "text-muted-foreground"
                     }`}
                   />
