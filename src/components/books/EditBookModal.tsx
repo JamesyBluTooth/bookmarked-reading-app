@@ -3,12 +3,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
+import { Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { LocalBookOverride, setLocalBookOverride, getLocalBookOverride } from "@/lib/localBookCache";
+import { saveUserEdit, getUserEdit, BookUserEdit } from "@/lib/bookUserEdits";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface EditBookModalProps {
   bookId: string;
+  isbn?: string;
   currentData: {
     title: string;
     author?: string;
@@ -22,6 +25,7 @@ interface EditBookModalProps {
 
 export const EditBookModal = ({
   bookId,
+  isbn,
   currentData,
   open,
   onOpenChange,
@@ -33,50 +37,110 @@ export const EditBookModal = ({
     total_pages: currentData.total_pages?.toString() || "",
     genres: currentData.genres?.join(", ") || "",
   });
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (open) {
-      // Load any existing local overrides
-      const override = getLocalBookOverride(bookId);
-      if (override) {
-        setFormData({
-          title: override.title || currentData.title,
-          author: override.author || currentData.author || "",
-          total_pages: override.total_pages?.toString() || currentData.total_pages?.toString() || "",
-          genres: override.genres?.join(", ") || currentData.genres?.join(", ") || "",
-        });
-      } else {
-        setFormData({
-          title: currentData.title,
-          author: currentData.author || "",
-          total_pages: currentData.total_pages?.toString() || "",
-          genres: currentData.genres?.join(", ") || "",
+    if (open && isbn) {
+      loadExistingEdit();
+    } else if (open) {
+      resetForm();
+    }
+  }, [open, isbn, currentData]);
+
+  const loadExistingEdit = async () => {
+    if (!isbn) {
+      resetForm();
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      resetForm();
+      return;
+    }
+
+    const existingEdit = await getUserEdit(isbn, user.id);
+    if (existingEdit) {
+      setFormData({
+        title: existingEdit.title || currentData.title,
+        author: existingEdit.author || currentData.author || "",
+        total_pages: existingEdit.total_pages?.toString() || currentData.total_pages?.toString() || "",
+        genres: existingEdit.genres?.join(", ") || currentData.genres?.join(", ") || "",
+      });
+    } else {
+      resetForm();
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: currentData.title,
+      author: currentData.author || "",
+      total_pages: currentData.total_pages?.toString() || "",
+      genres: currentData.genres?.join(", ") || "",
+    });
+  };
+
+  const handleSave = async () => {
+    if (!isbn) {
+      toast({
+        title: "Cannot save edit",
+        description: "This book doesn't have an ISBN, so edits cannot be shared with the community.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const genresArray = formData.genres.split(",").map(g => g.trim()).filter(g => g);
+
+      const edit: Omit<BookUserEdit, 'id' | 'created_at' | 'updated_at'> = {
+        isbn,
+        user_id: user.id,
+        title: formData.title !== currentData.title ? formData.title : undefined,
+        author: formData.author !== (currentData.author || "") ? formData.author : undefined,
+        total_pages: formData.total_pages && parseInt(formData.total_pages) !== (currentData.total_pages || 0) 
+          ? parseInt(formData.total_pages) 
+          : undefined,
+        genres: JSON.stringify(genresArray) !== JSON.stringify(currentData.genres || []) 
+          ? genresArray 
+          : undefined,
+      };
+
+      // Only save if there are actual changes
+      const hasChanges = edit.title || edit.author || edit.total_pages || edit.genres;
+      
+      if (hasChanges) {
+        const result = await saveUserEdit(edit);
+        if (!result) {
+          throw new Error("Failed to save edit");
+        }
+        
+        toast({
+          title: "Changes saved",
+          description: "Your edits have been saved and will be available for other users adding this book.",
         });
       }
-    }
-  }, [open, bookId, currentData]);
 
-  const handleSave = () => {
-    const override: LocalBookOverride = {};
-    
-    if (formData.title !== currentData.title) {
-      override.title = formData.title;
+      onSave();
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    if (formData.author !== (currentData.author || "")) {
-      override.author = formData.author;
-    }
-    if (formData.total_pages && parseInt(formData.total_pages) !== (currentData.total_pages || 0)) {
-      override.total_pages = parseInt(formData.total_pages);
-    }
-    const genresArray = formData.genres.split(",").map(g => g.trim()).filter(g => g);
-    const currentGenres = currentData.genres || [];
-    if (JSON.stringify(genresArray) !== JSON.stringify(currentGenres)) {
-      override.genres = genresArray;
-    }
-
-    setLocalBookOverride(bookId, override);
-    onSave();
-    onOpenChange(false);
   };
 
   return (
@@ -85,14 +149,14 @@ export const EditBookModal = ({
         <DialogHeader>
           <DialogTitle>Edit Book Details</DialogTitle>
           <DialogDescription>
-            Local corrections for incomplete data
+            Improve book data for the community
           </DialogDescription>
         </DialogHeader>
 
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
+        <Alert className="border-primary/30 bg-primary/5">
+          <Users className="h-4 w-4 text-primary" />
           <AlertDescription className="text-xs">
-            These changes only affect how the book displays on your device. They won't be saved to the database and are useful when Google Books is missing information.
+            Your edits will be saved and offered to other users who add this book, helping improve data quality across the community.
           </AlertDescription>
         </Alert>
 
@@ -140,11 +204,11 @@ export const EditBookModal = ({
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
-            Save Changes
+          <Button onClick={handleSave} disabled={loading}>
+            {loading ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </DialogContent>

@@ -230,6 +230,45 @@ export type Database = {
           },
         ]
       }
+      book_user_edits: {
+        Row: {
+          author: string | null
+          cover_url: string | null
+          created_at: string
+          genres: string[] | null
+          id: string
+          isbn: string
+          title: string | null
+          total_pages: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author?: string | null
+          cover_url?: string | null
+          created_at?: string
+          genres?: string[] | null
+          id?: string
+          isbn: string
+          title?: string | null
+          total_pages?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author?: string | null
+          cover_url?: string | null
+          created_at?: string
+          genres?: string[] | null
+          id?: string
+          isbn?: string
+          title?: string | null
+          total_pages?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           author: string | null

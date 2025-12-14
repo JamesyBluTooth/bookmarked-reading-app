@@ -11,7 +11,7 @@ import { AddNoteModal } from "./AddNoteModal";
 import { CompleteBookModal } from "./CompleteBookModal";
 import { TimelineItem } from "./TimelineItem";
 import { EditBookModal } from "./EditBookModal";
-import { mergeBookWithLocal } from "@/lib/localBookCache";
+import { getUserEdit, applyUserEdits, BookUserEdit } from "@/lib/bookUserEdits";
 
 interface BookDetailProps {
   bookId: string;
@@ -22,6 +22,7 @@ interface BookDetailProps {
 
 interface Book {
   id: string;
+  isbn?: string;
   title: string;
   author?: string;
   genres: string[];
@@ -73,9 +74,20 @@ export const BookDetail = ({ bookId, open, onOpenChange, onUpdate }: BookDetailP
       return;
     }
 
-    // Apply local overrides
-    const mergedData = mergeBookWithLocal(data);
-    setBook(mergedData);
+    // Apply user edits from database if available
+    if (data.isbn) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const userEdit = await getUserEdit(data.isbn, user.id);
+        if (userEdit) {
+          const mergedData = applyUserEdits(data, userEdit);
+          setBook(mergedData);
+          return;
+        }
+      }
+    }
+    
+    setBook(data);
   };
 
   const fetchTimeline = async () => {
@@ -348,6 +360,7 @@ export const BookDetail = ({ bookId, open, onOpenChange, onUpdate }: BookDetailP
 
       <EditBookModal
         bookId={bookId}
+        isbn={book.isbn}
         currentData={{
           title: book.title,
           author: book.author,

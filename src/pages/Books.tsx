@@ -7,6 +7,7 @@ import { BookMarked } from "lucide-react";
 
 interface Book {
   id: string;
+  isbn?: string;
   title: string;
   author?: string;
   cover_url?: string;
@@ -70,6 +71,7 @@ export const Books = () => {
                   <BookCard
                     key={book.id}
                     id={book.id}
+                    isbn={book.isbn}
                     title={book.title}
                     author={book.author}
                     coverUrl={book.cover_url}

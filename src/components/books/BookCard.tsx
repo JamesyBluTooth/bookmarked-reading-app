@@ -2,12 +2,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Check, Pencil } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditBookModal } from "./EditBookModal";
-import { mergeBookWithLocal } from "@/lib/localBookCache";
+import { getUserEdit, applyUserEdits, BookUserEdit } from "@/lib/bookUserEdits";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BookCardProps {
   id: string;
+  isbn?: string;
   title: string;
   author?: string;
   coverUrl?: string;
@@ -19,6 +21,7 @@ interface BookCardProps {
 
 export const BookCard = ({
   id,
+  isbn,
   title,
   author,
   coverUrl,
@@ -29,14 +32,41 @@ export const BookCard = ({
 }: BookCardProps) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  
-  // Apply local overrides
-  const displayData = mergeBookWithLocal({
+  const [displayData, setDisplayData] = useState({
     id,
     title,
     author,
     total_pages: totalPages,
+    cover_url: coverUrl,
   });
+
+  useEffect(() => {
+    const loadUserEdits = async () => {
+      if (!isbn) {
+        setDisplayData({ id, title, author, total_pages: totalPages, cover_url: coverUrl });
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setDisplayData({ id, title, author, total_pages: totalPages, cover_url: coverUrl });
+        return;
+      }
+
+      const userEdit = await getUserEdit(isbn, user.id);
+      if (userEdit) {
+        const merged = applyUserEdits(
+          { id, isbn, title, author, total_pages: totalPages, cover_url: coverUrl },
+          userEdit
+        );
+        setDisplayData(merged);
+      } else {
+        setDisplayData({ id, title, author, total_pages: totalPages, cover_url: coverUrl });
+      }
+    };
+
+    loadUserEdits();
+  }, [id, isbn, title, author, totalPages, coverUrl, refreshKey]);
   
   const progress = displayData.total_pages && displayData.total_pages > 0 ? (currentPage / displayData.total_pages) * 100 : 0;
 
@@ -58,9 +88,9 @@ export const BookCard = ({
         <CardContent className="p-4">
           <div className="flex gap-4">
             <div className="w-24 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0 shadow-md">
-              {coverUrl ? (
+              {displayData.cover_url ? (
                 <img
-                  src={coverUrl}
+                  src={displayData.cover_url}
                   alt={displayData.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -128,6 +158,7 @@ export const BookCard = ({
 
     <EditBookModal
       bookId={id}
+      isbn={isbn}
       currentData={{
         title,
         author,
