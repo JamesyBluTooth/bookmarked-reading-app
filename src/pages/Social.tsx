@@ -7,7 +7,6 @@ import { FriendShelf } from "@/components/social/FriendShelf";
 import { AddFriendModal } from "@/components/social/AddFriendModal";
 import { FriendProfileModal } from "@/components/social/FriendProfileModal";
 import { LeaderboardView } from "@/components/social/LeaderboardView";
-import { FriendFeed } from "@/components/dashboard/FriendFeed";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Social = () => {
@@ -92,12 +91,6 @@ export const Social = () => {
               key={refreshKey}
               onFriendClick={handleFriendClick} 
             />
-
-            {/* Friend Feed at bottom */}
-            <div className="mt-12">
-              <h2 className="text-xl font-semibold mb-4">Activity Feed</h2>
-              <FriendFeed />
-            </div>
           </TabsContent>
 
           <TabsContent value="leaderboard" className="mt-6">
