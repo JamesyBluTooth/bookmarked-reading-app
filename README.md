@@ -2,7 +2,9 @@
 
 ## Project info
 
-**URL**: https://bookmarked-reading-app.lovable.app
+**PRODUCTION URL**: https://readigo.vercel.app
+
+**EXPERIMENTAL URL**: https://readigo.lovable.app
 
 ## How can I edit this code?
 
