@@ -12,12 +12,11 @@ import { RightPanel } from "@/components/RightPanel";
 import { MobileNav } from "@/components/MobileNav";
 import { DailyChallenge } from "@/components/dashboard/DailyChallenge";
 import { FriendFeed } from "@/components/dashboard/FriendFeed";
-import { OnboardingContainer } from "@/components/onboarding/OnboardingContainer";
 
 const Index = () => {
   const [session, setSession] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "books" | "profile" | "challenge-history" | "social" | "settings">("books");
 
   useEffect(() => {
     const {
@@ -105,10 +104,6 @@ const Index = () => {
 
   if (!session) {
     return <AuthPage />;
-  }
-
-  if (showOnboarding) {
-    return <OnboardingContainer onComplete={() => setShowOnboarding(false)} />;
   }
 
   return (

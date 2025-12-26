@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { profileSchema } from "@/lib/validation";
 import { AvatarDisplay } from "@/components/profile/AvatarDisplay";
-import { AvatarSetupModal } from "@/components/profile/AvatarSetupModal";
 import { StatisticsView } from "@/components/statistics/StatisticsView";
 import { useNavigate } from "react-router-dom";
 import { Pencil, Settings } from "lucide-react";
@@ -25,7 +24,6 @@ export default function Profile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
-  const [showAvatarSetup, setShowAvatarSetup] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -60,15 +58,9 @@ export default function Profile() {
         if (insertError) throw insertError;
         setProfile(newProfile);
         setDisplayName(newProfile.display_name || "");
-        setShowAvatarSetup(true); // New users should set up avatar
       } else {
         setProfile(data);
         setDisplayName(data.display_name || "");
-        
-        // Check if this is the first time visiting profile without an avatar
-        if (!data.avatar_seed && !data.avatar_url) {
-          setShowAvatarSetup(true);
-        }
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -133,11 +125,6 @@ export default function Profile() {
 
   return (
     <>
-      <AvatarSetupModal 
-        open={showAvatarSetup} 
-        onOpenChange={setShowAvatarSetup}
-      />
-      
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Profile</h1>
 
